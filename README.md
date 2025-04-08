@@ -85,5 +85,3 @@ You can test the connection to the Kafka broker on TCP port `31234` with the fol
 ```bash
 nc -vvv localhost 31234
 ```
-
-nc -vvv 172.100.0.2 31092
