@@ -66,6 +66,7 @@ spec:
       hostPID: false
       dnsPolicy: ClusterFirst
 
+      ## Container configuration from the "kafka-e11b.yaml" cluster and "kind-with-portmapping.yaml"
       containers:
         - env:
           - name: DYNAMIC_CONFIG_ENABLED
