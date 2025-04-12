@@ -13,6 +13,9 @@ dependencies = [
 [tool.uv.workspace]
 members = ["services/trades"]
 
+[tool.uv.sources]
+trades = { workspace = true }
+
 [dependency-groups]
 lint = [
     "mypy>=1.15.0",

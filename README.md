@@ -34,13 +34,13 @@ uv add --group tests pytest
 To synchronize the project without installing the dependency groups, use the following command:
 
 ```bash
-uv sync --all-groups 
+uv sync  
 ```
 
 To synchronize the project and install the dependency groups, use the following command:
 
 ```bash
-uv sync --all
+uv sync --all-groups
 ```
 
 ## Setting up Kafka
@@ -85,3 +85,66 @@ You can test the connection to the Kafka broker on TCP port `31234` with the fol
 ```bash
 nc -vvv localhost 31234
 ```
+
+### Running a Service
+
+Once you have the Kafka cluster running, you can run the services.
+
+The first service is the `trades` service. This service will connect to the Kraken API and get the trades data in real time. It will then produce the trades data to the Kafka topic `trades`.
+
+The following command will run the `trades` service, and you should see the trades data in the Kafka UI together with the terminal output:
+
+```bash
+uv run services/trades/src/trades/main.py
+```
+
+![trades terminal](images/trades_terminal.png)
+
+![trades kafka ui](images/trades_kafta_ui.png)
+
+### Using the Makefile
+
+The project includes a Makefile with several useful commands for development and deployment:
+
+#### Kind Cluster Management
+
+```bash
+make start-kind-cluster  # Start the Kind cluster with port mapping
+```
+
+#### Development Commands
+
+```bash
+make dev service=trades             # Run a specific service in development mode
+make build-for-dev service=trades   # Build a service's Docker image for development
+```
+
+#### Linting and Formatting
+
+```bash
+make ruff    # Run Ruff linter with auto-fix
+make mypy    # Run MyPy static type checker
+make clean   # Clean up cached files and build artifacts
+make all     # Run all linting and formatting commands
+```
+
+#### Help Command
+
+```bash
+make help    # Display all available make commands with descriptions
+```
+
+Example workflow for building and running the trades service:
+
+```bash
+# Build the trades service Docker image
+make build-for-dev service=trades
+
+# Start the Kind cluster if not running
+make start-kind-cluster
+
+# Run the trades service
+make dev service=trades
+```
+
+The Makefile is designed to be self-documenting - you can always run `make help` to see all available commands and their descriptions.
