@@ -13,15 +13,16 @@ class Trade(BaseModel):
     timestamp: str
 
     def to_dict(self) -> dict[str, Any]:
-        return self.model_dump()
+        result: dict[str, Any] = self.model_dump()
+        return result
 
 
 class KrakenAPI:
-    URL = 'wss://ws.kraken.com/v2'
+    URL = "wss://ws.kraken.com/v2"
 
     def __init__(
         self,
-        product_ids: list[str],    
+        product_ids: list[str],
     ) -> None:
         self.product_ids = product_ids
 
@@ -30,38 +31,38 @@ class KrakenAPI:
 
         # send initial subscribe message
         self._subscribe(product_ids)
-    
+
     def get_trades(self) -> list[Trade]:
         data: str = self._ws_client.recv()
 
-        if 'heartbeat' in data:
-            logger.info('Heartbeat received')
+        if "heartbeat" in data:
+            logger.info("Heartbeat received")
             return []
 
         # transform raw string into a JSON object
         try:
             parsed_data: dict[str, Any] = json.loads(data)
         except json.JSONDecodeError as e:
-            logger.error(f'Error decoding JSON: {e}')
+            logger.error(f"Error decoding JSON: {e}")
             return []
 
         try:
-            trades_data: list[dict[str, Any]] = parsed_data['data']
+            trades_data: list[dict[str, Any]] = parsed_data["data"]
         except KeyError as e:
-            logger.error(f'No `data` field with trades in the message {e}')
+            logger.error(f"No `data` field with trades in the message {e}")
             return []
-        
+
         # Using list comprehension (this is faster)
         trades = [
             Trade(
-                product_id=str(trade['symbol']),
-                price=float(trade['price']),
-                quantity=float(trade['qty']),
-                timestamp=str(trade['timestamp']),
+                product_id=str(trade["symbol"]),
+                price=float(trade["price"]),
+                quantity=float(trade["qty"]),
+                timestamp=str(trade["timestamp"]),
             )
             for trade in trades_data
         ]
-        
+
         return trades
 
     def _subscribe(self, product_ids: list[str]) -> None:
@@ -73,11 +74,11 @@ class KrakenAPI:
         self._ws_client.send(
             json.dumps(
                 {
-                    'method': 'subscribe',
-                    'params': {
-                        'channel': 'trade',
-                        'symbol': product_ids,
-                        'snapshot': False,
+                    "method": "subscribe",
+                    "params": {
+                        "channel": "trade",
+                        "symbol": product_ids,
+                        "snapshot": False,
                     },
                 }
             )

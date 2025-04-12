@@ -5,9 +5,20 @@
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS builder
 
 # Enable bytecode compilation and set uv to use system interpreter
-ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=0
+ENV UV_COMPILE_BYTECODE=1
+
+# Copy dependencies instead of symlinking and use system Python interpreter
+ENV UV_LINK_MODE=copy
+
+# Use system Python interpreter
+ENV UV_PYTHON_DOWNLOADS=0
 
 WORKDIR /app
+
+# Add the workspace before the installation step
+# Otherwise, uv will try to install the workspace before it's added
+# And will fail  the uv sync command below
+COPY services /app/services
 
 # Install dependencies using uv (cache + bind mounts for speed)
 RUN --mount=type=cache,target=/root/.cache/uv \
@@ -45,7 +56,7 @@ USER app
 
 # Start the Python service without uv
 CMD ["python", "/app/services/trades/src/trades/main.py"]
-    
+
 
 # If you want to debug the file system, uncomment the line below
 # This will keep the container running and allow you to exec into it

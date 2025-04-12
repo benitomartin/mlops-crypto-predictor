@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trades
+  labels:
+    app: trades
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trades
+  template:
+    metadata:
+      labels:
+        app: trades
+    spec:
+      containers:
+      - name: trades
+        image: trades:dev
+        imagePullPolicy: Never # Use the local image
+
+        ## Environment variables
+        
+        # This is the address of the Kafka broker
+        # Without it, the deployment will fail, because the trades service will not be able to connect to the Kafka broker
+        env:
+        - name: KAFKA_BROKER_ADDRESS
+          value: kafka-e11b-kafka-bootstrap.kafka.svc.cluster.local:9092
+        - name: KAFKA_TOPIC
+          value: "trades"

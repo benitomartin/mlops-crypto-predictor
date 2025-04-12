@@ -7,7 +7,7 @@ This document explains the multi-stage Dockerfile used for the trades service.
 The `trades.Dockerfile` uses a multi-stage build pattern to create an optimized and secure production image. It consists of two stages:
 
 1. Builder stage - for dependency installation
-2. Final stage - for running the application
+1. Final stage - for running the application
 
 ## Stage 1: Builder
 
@@ -84,21 +84,25 @@ CMD ["python", "/app/services/trades/src/trades/main.py"]
 ## Best Practices Implemented
 
 1. **Security**:
+
    - Non-root user
    - Minimal base image
    - Proper file permissions
 
-2. **Performance**:
+1. **Performance**:
+
    - Multi-stage build
    - Cache optimization
    - Bytecode compilation
 
-3. **Size Optimization**:
+1. **Size Optimization**:
+
    - Slim base image
    - No dev dependencies
    - Clean build artifacts
 
-4. **Reproducibility**:
+1. **Reproducibility**:
+
    - Locked dependencies
    - Frozen environment
    - Explicit Python version
@@ -109,11 +113,32 @@ CMD ["python", "/app/services/trades/src/trades/main.py"]
 docker build -t trades:dev -f docker/trades.Dockerfile .
 ```
 
-## Running the Container
+## Loading the Image into the Kind Cluster
 
 ```bash
-docker run -d \
-  --name trades-service \
-  -v trades-data:/app/state \
-  trades:dev
+kind load docker-image trades:dev --name rwml-34fa
 ```
+
+You can verify the image is loaded in the Kind cluster with:
+
+```bash
+docker exec rwml-34fa-control-plane crictl images | grep trades
+```
+
+## Deploying the Image into the Kind Cluster
+
+For deployment, you need to apply the Kubernetes manifest. Make sure to set the `KAFKA_BROKER_ADDRESS` to the correct address.
+
+```bash
+kubectl apply -f deployments/dev/trades/trades.yaml
+```
+
+To verify the deployment, use the following command or use `k9s` terminal:
+
+```bash
+kubectl get deployments --all-namespaces
+```
+
+![deployment trades](../images/deployment_trades1.png)
+
+![deployment trades](../images/deployment_trades2.png)
