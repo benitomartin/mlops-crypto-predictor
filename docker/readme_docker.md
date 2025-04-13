@@ -56,6 +56,19 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
 ```
 
+Clean up unnecessary files to reduce image size:
+
+```dockerfile
+RUN find /app -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true; \
+    find /app -type d -name "*.dist-info" -exec rm -rf {} + 2>/dev/null || true; \
+    find /app -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true; \
+    find /app -type d -name "tests" -exec rm -rf {} + 2>/dev/null || true; \
+    find /app -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true; \
+    find /app -type d -name ".ruff_cache" -exec rm -rf {} + 2>/dev/null || true; \
+    find /app -type d -name ".mypy_cache" -exec rm -rf {} + 2>/dev/null || true; \
+    find /app -type f -name "*.pyc" -delete 2>/dev/null || true
+```
+
 ## Stage 2: Final Image
 
 ```dockerfile
@@ -75,10 +88,21 @@ ARG SERVICE_NAME
 ENV SERVICE_NAME=${SERVICE_NAME}
 ```
 
-Security configuration:
+A non-root user is created for security:
 
 ```dockerfile
 RUN groupadd -r app && useradd -r -g app app
+```
+
+The state directory is created with proper permissions:
+
+```dockerfile
+RUN mkdir -p /app/state && chown -R app:app /app/state
+```
+
+The application files are copied from the builder stage with correct ownership:
+
+```dockerfile
 COPY --from=builder --chown=app:app /app /app
 ```
 
