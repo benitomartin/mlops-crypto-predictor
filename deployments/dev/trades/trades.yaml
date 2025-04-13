@@ -20,7 +20,7 @@ spec:
         imagePullPolicy: Never # Use the local image
 
         ## Environment variables
-        
+
         # This is the address of the Kafka broker
         # Without it, the deployment will fail, because the trades service will not be able to connect to the Kafka broker
         env:

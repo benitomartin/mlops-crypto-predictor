@@ -130,47 +130,67 @@ uv run services/trades/src/trades/main.py
 
 ![trades kafka ui](images/trades_kafta_ui.png)
 
-### Using the Makefile
+## Makefile
 
 The project includes a Makefile with several useful commands for development and deployment:
 
-#### Kind Cluster Management
+1. Kind Cluster Management
+
+   ```bash
+   make start-kind-cluster  # Start the Kind cluster with port mapping (or build it if it doesn't exist)
+   make stop-kind-cluster   # Stop the Kind cluster
+   ```
+
+1. Development Commands
+
+   ```bash
+   make dev service=trades             # Run a specific service in development mode
+   make build-for-dev service=trades   # Build a service's Docker image for development
+   make push-for-dev service=trades    # Push a service's Docker image to the Kind cluster
+   make deploy-for-dev service=trades  # Deploy a service to the Kind cluster
+   ```
+
+   To verify the deployment, use the following command or use `k9s` terminal:
+
+   ```bash
+   kubectl get deployments --all-namespaces
+   ```
+
+   ![deployment trades](images/deployment_trades1.png)
+
+   ![deployment trades](images/deployment_trades2.png)
+
+1. Linting and Formatting
+
+   ```bash
+   make ruff    # Run Ruff linter with auto-fix
+   make mypy    # Run MyPy static type checker
+   make clean   # Clean up cached files and build artifacts
+   make all     # Run all linting and formatting commands
+   ```
+
+1. Help Command
+
+   ```bash
+   make help    # Display all available make commands with descriptions
+   ```
+
+## Pre-commit Hooks
+
+The project uses pre-commit hooks to ensure code quality and consistency. To install the pre-commit hooks, run the following command:
 
 ```bash
-make start-kind-cluster  # Start the Kind cluster with port mapping (or build it if it doesn't exist)
-make stop-kind-cluster   # Stop the Kind cluster
+pre-commit install
 ```
 
-#### Development Commands
+To update the pre-commit hooks to the latest versions, run the following command:
 
 ```bash
-make dev service=trades             # Run a specific service in development mode
-make build-for-dev service=trades   # Build a service's Docker image for development
-make push-for-dev service=trades    # Push a service's Docker image to the Kind cluster
-make deploy-for-dev service=trades  # Deploy a service to the Kind cluster
+pre-commit autoupdate
 ```
 
-To verify the deployment, use the following command or use `k9s` terminal:
+To run the pre-commit hooks manually, run the following command:
 
 ```bash
-kubectl get deployments --all-namespaces
-```
-
-![deployment trades](images/deployment_trades1.png)
-
-![deployment trades](images/deployment_trades2.png)
-
-#### Linting and Formatting
-
-```bash
-make ruff    # Run Ruff linter with auto-fix
-make mypy    # Run MyPy static type checker
-make clean   # Clean up cached files and build artifacts
-make all     # Run all linting and formatting commands
-```
-
-#### Help Command
-
-```bash
-make help    # Display all available make commands with descriptions
+pre-commit run --all-files
 ```
