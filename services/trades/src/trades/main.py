@@ -90,12 +90,20 @@ def run(
                         if shutdown_handler.shutdown:
                             break
 
-                        # 2. Serialize the trade event using the defined Topic
-                        message = topic.serialize(value=event.to_dict())
+                        trade_dict = event.to_dict()
+                        # Use product_id as the key for proper partitioning
+                        key = trade_dict["product_id"].encode("utf-8")
 
-                        # 3. Produce the message to the Kafka topic
-                        producer.produce(topic=topic.name, value=message.value, key=message.key)
-                        logger.info(f"Trade {event.to_dict()} pushed to Kafka")
+                        # Serialize the trade event using the defined Topic
+                        message = topic.serialize(value=trade_dict)
+
+                        # Produce the message to Kafka topic with the key
+                        producer.produce(
+                            topic=topic.name,
+                            value=message.value,
+                            key=key
+                        )
+                        logger.info(f"Trade {trade_dict} pushed to Kafka")
 
                 except Exception as e:
                     logger.error(f"Error processing trades: {e}")

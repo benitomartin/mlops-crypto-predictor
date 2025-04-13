@@ -4,7 +4,7 @@ This document explains the multi-stage Dockerfile used for the trades service.
 
 ## Overview
 
-The `trades.Dockerfile` uses a multi-stage build pattern to create an optimized and secure production image. It consists of two stages:
+The `Dockerfile` uses a multi-stage build pattern to create an optimized and secure production image. It consists of two stages:
 
 1. Builder stage - for dependency installation
 1. Final stage - for running the application
@@ -24,8 +24,8 @@ This stage uses `uv` to handle dependencies. Key features:
 Environment configuration:
 
 ```dockerfile
-ENV UV_COMPILE_BYTECODE=1 
-ENV UV_LINK_MODE=copy 
+ENV UV_COMPILE_BYTECODE=1
+ENV UV_LINK_MODE=copy
 ENV UV_PYTHON_DOWNLOADS=0
 ```
 
@@ -66,7 +66,14 @@ The final stage creates a minimal production image. Security features include:
 
 - Non-root user creation
 - Proper file ownership
-- Volume mounting for state persistence
+- Environment path and variable setup
+
+The service name is passed as an argument:
+
+```dockerfile
+ARG SERVICE_NAME
+ENV SERVICE_NAME=${SERVICE_NAME}
+```
 
 Security configuration:
 
@@ -81,11 +88,12 @@ The virtual environment is added to the PATH:
 ENV PATH="/app/.venv/bin:$PATH"
 ```
 
-The service runs as non-root user:
+The service is started without `uv` and as a non-root user:
 
 ```dockerfile
 USER app
-CMD ["python", "/app/services/trades/src/trades/main.py"]
+ENTRYPOINT ["sh", "-c", "exec python /app/services/${SERVICE_NAME}/src/${SERVICE_NAME}/main.py"]
+CMD []
 ```
 
 ## Best Practices Implemented
@@ -117,13 +125,13 @@ CMD ["python", "/app/services/trades/src/trades/main.py"]
 ## Building the Image
 
 ```bash
-docker build -t trades:dev -f docker/trades.Dockerfile .
+make build-for-dev service=trades # Add the service name as an argument
 ```
 
 ## Loading the Image into the Kind Cluster
 
 ```bash
-kind load docker-image trades:dev --name rwml-34fa
+make push-for-dev service=trades # Add the service name as an argument
 ```
 
 You can verify the image is loaded in the Kind cluster with:
@@ -134,10 +142,10 @@ docker exec rwml-34fa-control-plane crictl images | grep trades
 
 ## Deploying the Image into the Kind Cluster
 
-For deployment, you need to apply the Kubernetes manifest. Make sure to set the `KAFKA_BROKER_ADDRESS` to the correct address.
+For deployment, you need to apply the Kubernetes manifest under `deployments/dev/`. Make sure to set the `KAFKA_BROKER_ADDRESS` to the correct address.
 
 ```bash
-kubectl apply -f deployments/dev/trades/trades.yaml
+make deploy-for-dev service=trades # Add the service name as an argument
 ```
 
 To verify the deployment, use the following command or use `k9s` terminal:

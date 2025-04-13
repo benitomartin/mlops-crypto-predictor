@@ -104,6 +104,24 @@ To visualize the Kafka UI, it is necessary to forward the port `8080` from the `
 kubectl -n kafka port-forward svc/kafka-ui 8182:8080
 ```
 
+> 💡**Note**: You can also use `tmux` to run the port-forwarding command in the background and keep it running. For that, you can use the following command:
+>
+> ```bash
+> tmux new-session -d 'kubectl -n kafka port-forward svc/kafka-ui 8182:8080'
+> ```
+>
+> To stop the port-forwarding, you can use the following commands. First ceck the session number with:
+>
+> ```bash
+> tmux ls
+> ```
+>
+> Then kill the session with:
+>
+> ```bash
+> tmux kill-session -t <session_number>
+> ```
+
 Now you can access the Kafka UI in your local machine at `http://localhost:8182` or `http://127.0.0.1:8182`.
 
 ![kafka ui web](images/kafka_ui_web.png)

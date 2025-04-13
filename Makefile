@@ -2,6 +2,9 @@
 
 .PHONY: dev all ruff mypy clean help
 
+service ?= trades
+
+
 ################################################################################
 ## Kind Cluster
 ################################################################################
@@ -24,16 +27,45 @@ port-forward: ## Port forward the Kafka UI
 	@echo "Port forwarding the Kafka UI..."
 	kubectl -n kafka port-forward svc/kafka-ui 8182:8080
 
-################################################################################
-## Development
-################################################################################
+tmux-port-forward: ## Port forward the Kafka UI with tmux
+	@echo "Port forwarding the Kafka UI with tmux..."
+	tmux new-session -d 'kubectl -n kafka port-forward svc/kafka-ui 8182:8080'
+	@echo "Port forwarding complete. You can access the Kafka UI at http://localhost:8182"
+
+# ################################################################################
+# ## Development
+# ################################################################################
+
+# dev: ## Run the trades service
+# 	uv run services/${service}/src/${service}/main.py
+
+# build-for-dev: ## Build the trades service for development
+# 	@echo "Building ${service} service..."
+# 	docker build -t ${service}:dev -f docker/${service}.Dockerfile .
+# 	@echo "Build complete for ${service}:dev"
+
+# push-for-dev: ## Push the trades service to the docker registry of the Kind cluster
+# 	@echo "Pushing ${service} service to the docker registry of the Kind cluster..."
+# 	kind load docker-image ${service}:dev --name rwml-34fa
+# 	@echo "Push complete for ${service}:dev"
+
+# deploy-for-dev: ## Deploy the trades service to the Kind cluster
+# 	@echo "Deploying ${service} service to the Kind cluster..."
+# 	kubectl delete -f deployments/dev/${service}/${service}.yaml --ignore-not-found
+# 	@echo "Deployment deleted for ${service}"
+# 	sleep 5
+# 	@echo "Waiting 5 seconds..."
+
+# 	@echo "Deploying ${service} service to the Kind cluster..."
+# 	kubectl apply -f deployments/dev/${service}/${service}.yaml
+# 	@echo "Deployment complete for ${service}"
 
 dev: ## Run the trades service
 	uv run services/${service}/src/${service}/main.py
 
 build-for-dev: ## Build the trades service for development
 	@echo "Building ${service} service..."
-	docker build -t ${service}:dev -f docker/${service}.Dockerfile .
+	docker build --build-arg SERVICE_NAME=${service} -t ${service}:dev -f docker/Dockerfile .
 	@echo "Build complete for ${service}:dev"
 
 push-for-dev: ## Push the trades service to the docker registry of the Kind cluster
@@ -51,6 +83,7 @@ deploy-for-dev: ## Deploy the trades service to the Kind cluster
 	@echo "Deploying ${service} service to the Kind cluster..."
 	kubectl apply -f deployments/dev/${service}/${service}.yaml
 	@echo "Deployment complete for ${service}"
+
 
 
 ################################################################################
