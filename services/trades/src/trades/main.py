@@ -98,11 +98,7 @@ def run(
                         message = topic.serialize(value=trade_dict)
 
                         # Produce the message to Kafka topic with the key
-                        producer.produce(
-                            topic=topic.name,
-                            value=message.value,
-                            key=key
-                        )
+                        producer.produce(topic=topic.name, value=message.value, key=key)
                         logger.info(f"Trade {trade_dict} pushed to Kafka")
 
                 except Exception as e:
