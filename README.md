@@ -1,4 +1,8 @@
-# mlops-llm-crypto-predictor
+# MLOPS LLM Crypto Predictor
+
+![deployment trades](images/deployment_trades2.png)
+
+This is a project to predict crypto prices using Kafka, Kind, Kubernetes, uv, and Quix Streams.
 
 ## Initialize the Project
 
