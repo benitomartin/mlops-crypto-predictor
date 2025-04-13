@@ -188,7 +188,7 @@ The project includes a Makefile with several useful commands for development and
    make ruff    # Run Ruff linter with auto-fix
    make mypy    # Run MyPy static type checker
    make clean   # Clean up cached files and build artifacts
-   make all     # Run all linting and formatting commands
+   make all     # Run ruff, mypy, and clean in sequence
    ```
 
 1. Help Command
