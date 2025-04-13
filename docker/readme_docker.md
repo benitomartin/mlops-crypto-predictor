@@ -24,12 +24,20 @@ This stage uses `uv` to handle dependencies. Key features:
 Environment configuration:
 
 ```dockerfile
-ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=0
+ENV UV_COMPILE_BYTECODE=1 
+ENV UV_LINK_MODE=copy 
+ENV UV_PYTHON_DOWNLOADS=0
 ```
 
 - `UV_COMPILE_BYTECODE=1`: Pre-compiles Python bytecode for faster startup
 - `UV_LINK_MODE=copy`: Copies dependencies instead of symlinking
 - `UV_PYTHON_DOWNLOADS=0`: Uses system Python interpreter
+
+The workspace is added before dependency installation:
+
+```dockerfile
+COPY services /app/services
+```
 
 The build process uses Docker's cache mount feature for faster builds:
 
@@ -67,11 +75,10 @@ RUN groupadd -r app && useradd -r -g app app
 COPY --from=builder --chown=app:app /app /app
 ```
 
-State management:
+The virtual environment is added to the PATH:
 
 ```dockerfile
-RUN mkdir -p /app/state && chown app:app /app/state
-VOLUME /app/state
+ENV PATH="/app/.venv/bin:$PATH"
 ```
 
 The service runs as non-root user:

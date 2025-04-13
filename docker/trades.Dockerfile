@@ -44,11 +44,7 @@ RUN groupadd -r app && useradd -r -g app app
 # Copy application files from builder stage with correct ownership
 COPY --from=builder --chown=app:app /app /app
 
-# Create state folder and mark it as a volume
-RUN mkdir -p /app/state && chown app:app /app/state
-VOLUME /app/state
-
-# Set environment path to virtual environment if applicable
+# Set environment path to virtual environment
 ENV PATH="/app/.venv/bin:$PATH"
 
 # Switch to non-root user

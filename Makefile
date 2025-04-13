@@ -17,6 +17,14 @@ stop-kind-cluster: ## Stop the Kind cluster
 	@echo "Kind cluster stopped."
 
 ################################################################################
+## Kafka UI
+################################################################################
+
+port-forward: ## Port forward the Kafka UI
+	@echo "Port forwarding the Kafka UI..."
+	kubectl -n kafka port-forward svc/kafka-ui 8182:8080
+
+################################################################################
 ## Development
 ################################################################################
 
