@@ -152,6 +152,12 @@ uv run services/trades/src/trades/main.py
 
 ![trades kafka ui](images/trades_kafta_ui.png)
 
+### Managing Partitions
+
+By default the number of partitions is 1. If you change the number of partitions from the trades service from 1 to 2, you will see that the trades data is distributed between the two partitions. Only when both partitions has values, you can deplos the candles service with 2 replicas, so that each replica will consume from one partition.
+
+Changing the partitions after the candles service is deployed will not work, because the candles service will not be able to consume from the new partitions and this will rise an error. You will need to delete the candles service and deploy it again with the new number of partitions.
+
 ## Makefile
 
 The project includes a Makefile with several useful commands for development and deployment:
