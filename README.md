@@ -81,7 +81,7 @@ To setup Kafka, we need first to create a Kind cluster with port mapping.
 
 There are several scripts and folders in the `deployments/dev/kind` directory.
 
-- `kind-with-portmapping.yaml`: This is the Kind configuration file. It includes the port mapping for Kafka. 
+- `kind-with-portmapping.yaml`: This is the Kind configuration file. It includes the port mapping for Kafka.
 - `manifests`: This folder contains the Kafka configuration files.
   - `kafka-e11b.yaml`: This is the Kafka configuration file. It includes the port mapping for Kafka. With this file there will be created the **2 Kafka pods** (`dual-role` and `entity-operator`).
   - `kafka-ui-all-in-one.yaml`: This is the Kafka UI configuration file. It includes the port mapping for Kafka UI. This will create the **Kafka UI pod**.

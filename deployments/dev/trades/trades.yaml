@@ -16,8 +16,8 @@ spec:
     spec:
       containers:
       - name: trades
-        image: trades:dev
-        imagePullPolicy: Never # Use the local image
+        image: trades:dev         # This is the image we pushed to the Kind cluster
+        imagePullPolicy: Never    # Use the local image
 
         ## Environment variables
 

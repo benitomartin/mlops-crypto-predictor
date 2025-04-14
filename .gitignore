@@ -175,4 +175,3 @@ cython_debug/
 
 deployments/dev/kind/manifests/risingwave-values.yaml
 docker/trades.Dockerfile
-

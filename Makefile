@@ -51,7 +51,7 @@ push-for-dev: ## Push the trades service to the docker registry of the Kind clus
 	kind load docker-image ${service}:dev --name rwml-34fa
 	@echo "Push complete for ${service}:dev"
 
-deploy-for-dev: ## Deploy the trades service to the Kind cluster
+deploy-for-dev: build-for-dev push-for-dev ## Deploy the trades service to the Kind cluster
 	@echo "Deploying ${service} service to the Kind cluster..."
 	kubectl delete -f deployments/dev/${service}/${service}.yaml --ignore-not-found
 	@echo "Deployment deleted for ${service}"

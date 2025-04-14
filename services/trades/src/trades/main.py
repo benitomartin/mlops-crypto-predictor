@@ -92,13 +92,13 @@ def run(
 
                         trade_dict = event.to_dict()
                         # Use product_id as the key for proper partitioning
-                        key = trade_dict["product_id"].encode("utf-8")
+                        # key = trade_dict["product_id"].encode("utf-8")
 
                         # Serialize the trade event using the defined Topic
-                        message = topic.serialize(value=trade_dict)
+                        message = topic.serialize(key=event.product_id, value=event.to_dict())
 
                         # Produce the message to Kafka topic with the key
-                        producer.produce(topic=topic.name, value=message.value, key=key)
+                        producer.produce(topic=topic.name, value=message.value, key=message.key)
                         logger.info(f"Trade {trade_dict} pushed to Kafka")
 
                 except Exception as e:
