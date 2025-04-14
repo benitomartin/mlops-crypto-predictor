@@ -222,3 +222,9 @@ To run the pre-commit hooks manually, run the following command:
 ```bash
 pre-commit run --all-files
 ```
+
+## Kafka UI (Prod)
+
+The Kafka UI is available at the following URL:
+
+https://kafka-ui.ll-4be9.com/

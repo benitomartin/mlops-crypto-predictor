@@ -37,3 +37,9 @@ spec:
           limits:
             cpu: 1000m
             memory: 512Mi
+
+
+## TODO:
+
+# This file uses a different namespace than dev
+# Create a new namespace to push to prod

@@ -31,3 +31,8 @@ spec:
           value: "candles_consumer_group"
         - name: CANDLE_SECONDS
           value: "60"
+
+## TODO:
+
+# This file uses a different namespace than dev
+# Create a new namespace to push to prod
