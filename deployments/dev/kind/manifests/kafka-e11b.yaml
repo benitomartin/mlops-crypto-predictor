@@ -81,3 +81,10 @@ spec:
   entityOperator:
     topicOperator: {}                               # Enable Kafka Topic Operator for managing Kafka topics
     userOperator: {}                                # Enable Kafka User Operator for managing Kafka users
+
+
+## Pods Created from this file
+# kafka-e11b-dual-role-0
+# kafka-e11b-entity-operator-XXXXXX
+
+

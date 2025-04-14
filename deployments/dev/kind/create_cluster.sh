@@ -15,8 +15,11 @@ docker network create --subnet 172.100.0.0/16 rwml-34fa-network
 
 # 4. Create the cluster with name rwml-34fa
 ## KIND_EXPERIMENTAL_DOCKER_NETWORK just overrides the default kind cluster network
+## This creates 8 core Kubernetes pods + local-path-storage pod
 echo "Creating the cluster..."
 KIND_EXPERIMENTAL_DOCKER_NETWORK=rwml-34fa-network kind create cluster --config ./kind-with-portmapping.yaml
+
+
 
 # 5. Install Kafka
 echo "Installing Kafka..."

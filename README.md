@@ -81,11 +81,11 @@ To setup Kafka, we need first to create a Kind cluster with port mapping.
 
 There are several scripts and folders in the `deployments/dev/kind` directory.
 
-- `kind-with-portmapping.yaml`: This is the Kind configuration file. It includes the port mapping for Kafka.
+- `kind-with-portmapping.yaml`: This is the Kind configuration file. It includes the port mapping for Kafka. 
 - `manifests`: This folder contains the Kafka configuration files.
-  - `kafka-e11b.yaml`: This is the Kafka configuration file. It includes the port mapping for Kafka.
-  - `kafka-ui-all-in-one.yaml`: This is the Kafka UI configuration file. It includes the port mapping for Kafka UI.
-- `install_kafka.sh`: This script installs Kafka using [Strimzi](https://strimzi.io/quickstarts/) that allows to use Kafka in Kubernetes. It uses the `kafka-e11b.yaml` configuration file.
+  - `kafka-e11b.yaml`: This is the Kafka configuration file. It includes the port mapping for Kafka. With this file there will be created the **2 Kafka pods** (`dual-role` and `entity-operator`).
+  - `kafka-ui-all-in-one.yaml`: This is the Kafka UI configuration file. It includes the port mapping for Kafka UI. This will create the **Kafka UI pod**.
+- `install_kafka.sh`: This script installs Kafka using [Strimzi](https://strimzi.io/quickstarts/) that allows to use Kafka in Kubernetes. It uses the `kafka-e11b.yaml` configuration file. With this file there will be created **8 core Kubernetes pods** (kube-system) and the `local-path-storage` pod from Kind to handle persistent storage in the cluster in adddition to the pods created in `kafka-e11b.yaml`
 - `install_kafka_ui.sh`: This script installs Kafka UI to make it easier to manage Kafka in a Web UI. It uses the `kafka-ui-all-in-one.yaml` configuration file.
 - `create_cluster.sh`: This script runs all the previous scripts in order to create the Kind cluster with Kafka and Kafka UI.
 

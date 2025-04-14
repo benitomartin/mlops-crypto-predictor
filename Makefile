@@ -19,6 +19,7 @@ stop-kind-cluster: ## Stop the Kind cluster
 	docker stop rwml-34fa-control-plane
 	@echo "Kind cluster stopped."
 
+
 ################################################################################
 ## Kafka UI
 ################################################################################
@@ -31,6 +32,7 @@ tmux-port-forward: ## Port forward the Kafka UI with tmux
 	@echo "Port forwarding the Kafka UI with tmux..."
 	tmux new-session -d 'kubectl -n kafka port-forward svc/kafka-ui 8182:8080'
 	@echo "Port forwarding complete. You can access the Kafka UI at http://localhost:8182"
+
 
 # ################################################################################
 # ## Development
@@ -61,7 +63,6 @@ deploy-for-dev: ## Deploy the trades service to the Kind cluster
 	@echo "Deployment complete for ${service}"
 
 
-
 ################################################################################
 ## Production
 ################################################################################
@@ -71,7 +72,6 @@ deploy-for-dev: ## Deploy the trades service to the Kind cluster
 ################################################################################
 ## Linting and Formatting
 ################################################################################
-
 
 all: ruff mypy clean ## Run all linting and formatting commands
 

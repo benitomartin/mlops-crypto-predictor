@@ -13,6 +13,7 @@ ENV UV_LINK_MODE=copy
 # Use system Python interpreter
 ENV UV_PYTHON_DOWNLOADS=0
 
+# Set working directory
 WORKDIR /app
 
 # Add the workspace before the installation step
@@ -36,6 +37,7 @@ RUN find /app -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true;
     find /app -type d -name "*.dist-info" -exec rm -rf {} + 2>/dev/null || true; \
     find /app -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true; \
     find /app -type d -name "tests" -exec rm -rf {} + 2>/dev/null || true; \
+    find /app -type d -name "images" -exec rm -rf {} + 2>/dev/null || true; \
     find /app -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true; \
     find /app -type d -name ".ruff_cache" -exec rm -rf {} + 2>/dev/null || true; \
     find /app -type d -name ".mypy_cache" -exec rm -rf {} + 2>/dev/null || true; \
