@@ -12,7 +12,7 @@ Initialize the project from the root directory. This will create the main `pypro
 uv init
 ```
 
-Create a `trades` workspace in the `services` directory. This will create a `pyproject.toml` file in the `trades` workspace, with the `src` layout, and incllude the `hatchling` build-system. Additionally, it will add the `trades` workspace to the main `pyproject.toml` file.
+Create a `trades` workspace in the `services` directory. This will create a `pyproject.toml` file in the `trades` workspace, with the `src` layout, and include the `hatchling` build-system. Additionally, it will add the `trades` workspace to the main `pyproject.toml` file.
 
 ```bash
 cd services
@@ -85,7 +85,7 @@ There are several scripts and folders in the `deployments/dev/kind` directory.
 - `manifests`: This folder contains the Kafka configuration files.
   - `kafka-e11b.yaml`: This is the Kafka configuration file. It includes the port mapping for Kafka. With this file there will be created the **2 Kafka pods** (`dual-role` and `entity-operator`).
   - `kafka-ui-all-in-one.yaml`: This is the Kafka UI configuration file. It includes the port mapping for Kafka UI. This will create the **Kafka UI pod**.
-- `install_kafka.sh`: This script installs Kafka using [Strimzi](https://strimzi.io/quickstarts/) that allows to use Kafka in Kubernetes. It uses the `kafka-e11b.yaml` configuration file. With this file there will be created **8 core Kubernetes pods** (kube-system) and the `local-path-storage` pod from Kind to handle persistent storage in the cluster in adddition to the pods created in `kafka-e11b.yaml`
+- `install_kafka.sh`: This script installs Kafka using [Strimzi](https://strimzi.io/quickstarts/) that allows to use Kafka in Kubernetes. It uses the `kafka-e11b.yaml` configuration file. With this file there will be created **8 core Kubernetes pods** (kube-system) and the `local-path-storage` pod from Kind to handle persistent storage in the cluster in addition to the pods created in `kafka-e11b.yaml`
 - `install_kafka_ui.sh`: This script installs Kafka UI to make it easier to manage Kafka in a Web UI. It uses the `kafka-ui-all-in-one.yaml` configuration file.
 - `create_cluster.sh`: This script runs all the previous scripts in order to create the Kind cluster with Kafka and Kafka UI.
 
@@ -114,7 +114,7 @@ kubectl -n kafka port-forward svc/kafka-ui 8182:8080
 > tmux new-session -d 'kubectl -n kafka port-forward svc/kafka-ui 8182:8080'
 > ```
 >
-> To stop the port-forwarding, you can use the following commands. First ceck the session number with:
+> To stop the port-forwarding, you can use the following commands. First check the session number with:
 >
 > ```bash
 > tmux ls
@@ -154,7 +154,7 @@ uv run services/trades/src/trades/main.py
 
 ### Managing Partitions
 
-By default the number of partitions is 1. If you change the number of partitions from the trades service from 1 to 2, you will see that the trades data is distributed between the two partitions. Only when both partitions has values, you can deplos the candles service with 2 replicas, so that each replica will consume from one partition.
+By default the number of partitions is 1. If you change the number of partitions from the trades service from 1 to 2, you will see that the trades data is distributed between the two partitions. Only when both partitions have values, you can deploy the candles service with 2 replicas, so that each replica will consume from one partition.
 
 Changing the partitions after the candles service is deployed will not work, because the candles service will not be able to consume from the new partitions and this will rise an error. You will need to delete the candles service and deploy it again with the new number of partitions.
 
