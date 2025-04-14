@@ -67,7 +67,28 @@ deploy-for-dev: build-for-dev push-for-dev ## Deploy the trades service to the K
 ## Production
 ################################################################################
 
+## NOTE: # The linux/arm64 platform is not supported with non-root users creation as the Dockerfile is currently defined
 
+build-and-push-for-prod: ## Build and push the trades service for production
+	@echo "Building ${service} service for production..."
+	@export BUILD_DATE=$$(date +%s) && \
+	docker buildx build --push \
+		--platform linux/amd64 \
+		--build-arg SERVICE_NAME=${service} \
+		-t ghcr.io/benitomartin/${service}:latest \
+		-t ghcr.io/benitomartin/${service}:0.1.5-beta.$${BUILD_DATE} \
+		-f docker/Dockerfile .
+
+deploy-for-prod: ## Deploy the service to production
+	@echo "Deploying ${service} service to production..."
+	kubectl delete -f deployments/prod/${service}/${service}.yaml --ignore-not-found
+	@echo "Deployment deleted for ${service}"
+	sleep 5
+	@echo "Waiting 5 seconds..."
+
+	@echo "Deploying ${service} service to production..."
+	kubectl apply -f deployments/prod/${service}/${service}.yaml
+	@echo "Deployment complete for ${service}"
 
 ################################################################################
 ## Linting and Formatting
