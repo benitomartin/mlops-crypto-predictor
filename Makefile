@@ -105,7 +105,7 @@ build-for-dev-ti: ## Build the technical indicators service for development
 push-for-dev-ti: ## Push the technical indicators service to the docker registry of the Kind cluster
 	@echo "Pushing technical indicators service to the docker registry of the Kind cluster..."
 	kind load docker-image technical-indicators:dev --name rwml-34fa
-	@echo "Push complete for technical_indicators:dev"
+	@echo "Push complete for technical-indicators:dev"
 
 deploy-for-dev-ti: build-for-dev-ti push-for-dev-ti ## Deploy the technical indicators service to the Kind cluster
 	@echo "Deploying technical_indicators service to the Kind cluster..."
