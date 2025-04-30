@@ -78,9 +78,30 @@ spec:
       default.replication.factor: 1                 # Default replication factor for topics
       min.insync.replicas: 1                        # Minimum number of in-sync replicas for producers to write
 
+  # entityOperator:
+  #   topicOperator: {}                               # Enable Kafka Topic Operator for managing Kafka topics
+  #   userOperator: {}                                # Enable Kafka User Operator for managing Kafka users
+
+## This restricts the CPU and memory resources for the entity operator pods
+## Otherwise, the pods will use all the available resources and docker will crash
   entityOperator:
-    topicOperator: {}                               # Enable Kafka Topic Operator for managing Kafka topics
-    userOperator: {}                                # Enable Kafka User Operator for managing Kafka users
+    topicOperator:
+      resources:
+        requests:
+          cpu: "250m"
+          memory: "512Mi"
+        limits:
+          cpu: "500m"
+          memory: "768Mi"
+    userOperator:
+      resources:
+        requests:
+          cpu: "250m"
+          memory: "512Mi"
+        limits:
+          cpu: "500m"
+          memory: "768Mi"
+
 
 
 ## Pods Created from this file

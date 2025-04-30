@@ -35,7 +35,7 @@ tmux-port-forward: ## Port forward the Kafka UI with tmux
 
 
 # ################################################################################
-# ## Development
+# ## Development Trades/Candles
 # ################################################################################
 
 dev: ## Run the trades service
@@ -64,7 +64,7 @@ deploy-for-dev: build-for-dev push-for-dev ## Deploy the trades service to the K
 
 
 ################################################################################
-## Production
+## Production Trades/Candles
 ################################################################################
 
 ## NOTE: # The linux/arm64 platform is not supported with non-root users creation as the Dockerfile is currently defined
@@ -89,6 +89,62 @@ deploy-for-prod: ## Deploy the service to production
 	@echo "Deploying ${service} service to production..."
 	kubectl apply -f deployments/prod/${service}/${service}.yaml
 	@echo "Deployment complete for ${service}"
+
+# ################################################################################
+# ## Development Technical Indicators
+# ################################################################################
+
+dev-ti: ## Run the technical indicators service
+	uv run services/technical_indicators/src/technical_indicators/main.py
+
+build-for-dev-ti: ## Build the technical indicators service for development
+	@echo "Building technical indicators service..."
+	docker build --build-arg SERVICE_NAME=technical_indicators -t technical-indicators:dev -f docker/ti.Dockerfile .
+	@echo "Build complete for technical-indicators:dev"
+
+push-for-dev-ti: ## Push the technical indicators service to the docker registry of the Kind cluster
+	@echo "Pushing technical indicators service to the docker registry of the Kind cluster..."
+	kind load docker-image technical-indicators:dev --name rwml-34fa
+	@echo "Push complete for technical_indicators:dev"
+
+deploy-for-dev-ti: build-for-dev-ti push-for-dev-ti ## Deploy the technical indicators service to the Kind cluster
+	@echo "Deploying technical_indicators service to the Kind cluster..."
+	kubectl delete -f deployments/dev/technical_indicators/technical-indicators-d.yaml --ignore-not-found
+	@echo "Deployment deleted for technical_indicators"
+	sleep 5
+	@echo "Waiting 5 seconds..."
+
+	@echo "Deploying technical_indicators service to the Kind cluster..."
+	kubectl apply -f deployments/dev/technical_indicators/technical-indicators-d.yaml
+	@echo "Deployment complete for technical indicators"
+
+
+# ################################################################################
+# ## Production Technical Indicators
+# ################################################################################
+
+# ## NOTE: # The linux/arm64 platform is not supported with non-root users creation as the Dockerfile is currently defined
+
+# build-and-push-for-prod: ## Build and push the trades service for production
+# 	@echo "Building ${service} service for production..."
+# 	@export BUILD_DATE=$$(date +%s) && \
+# 	docker buildx build --push \
+# 		--platform linux/amd64 \
+# 		--build-arg SERVICE_NAME=${service} \
+# 		-t ghcr.io/benitomartin/${service}:latest \
+# 		-t ghcr.io/benitomartin/${service}:0.1.5-beta.$${BUILD_DATE} \
+# 		-f docker/Dockerfile .
+
+# deploy-for-prod: ## Deploy the service to production
+# 	@echo "Deploying ${service} service to production..."
+# 	kubectl delete -f deployments/prod/${service}/${service}.yaml --ignore-not-found
+# 	@echo "Deployment deleted for ${service}"
+# 	sleep 5
+# 	@echo "Waiting 5 seconds..."
+
+# 	@echo "Deploying ${service} service to production..."
+# 	kubectl apply -f deployments/prod/${service}/${service}.yaml
+# 	@echo "Deployment complete for ${service}"
 
 ################################################################################
 ## Linting and Formatting

@@ -1,24 +1,31 @@
 [project]
 name = "mlops-llm-crypto-predictor"
 version = "0.1.0"
-description = "MLOPS LLM Crypto Predictor"
+description = "MLOps LLM Crypto Predictor"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "candles",
     "loguru>=0.7.3",
     "quixstreams>=3.13.1",
+    "technical-indicators",
     "trades",
     "websocket-client>=1.8.0",
 ]
 
+[project.optional-dependencies]
+talib = [
+    "ta-lib>=0.6.3",
+]
+
 
 [tool.uv.workspace]
-members = ["services/trades", "services/candles"]
+members = ["services/trades", "services/candles", "services/technical_indicators"]
 
 [tool.uv.sources]
 trades = { workspace = true }
 candles = { workspace = true }
+technical-indicators = { workspace = true }
 
 [dependency-groups]
 dev = [

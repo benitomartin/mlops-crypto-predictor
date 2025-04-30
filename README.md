@@ -1,4 +1,4 @@
-# MLOPS LLM Crypto Predictor
+# MLOps LLM Crypto Predictor
 
 ![deployment trades](images/deployment_trades2.png)
 
@@ -59,6 +59,20 @@ To add local dependencies for development (`dependency-groups`) use the followin
 
 ```bash
 uv add --group tests pytest
+```
+
+### TA-Lib Installation
+
+TA-Lib is a library for technical analysis of financial data. It is used in the project to calculate technical indicators.
+
+You must install TA-Lib before adding it to the project. To install TA-Lib, follow the instructions on the following link:
+
+https://ta-lib.org/install/#executable-installer-recommended
+
+Then add the package to the project:
+
+```bash
+uv add ta-lib
 ```
 
 ### Synchronize the Project
@@ -227,4 +241,10 @@ pre-commit run --all-files
 
 The Kafka UI is available at the following URL:
 
-https://kafka-ui.ll-4be9.com/
+<https://kafka-ui.ll-4be9.com/>
+
+## Metrics Server
+
+```bash
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+```
