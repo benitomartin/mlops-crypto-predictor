@@ -172,6 +172,123 @@ By default the number of partitions is 1. If you change the number of partitions
 
 Changing the partitions after the candles service is deployed will not work, because the candles service will not be able to consume from the new partitions and this will rise an error. You will need to delete the candles service and deploy it again with the new number of partitions.
 
+## RisingWave
+
+RisingWave is a streaming database that allows you to perform real-time analytics on streaming data. It is used in the project to store the candles data.
+
+To setup RisingWave we need the `risingwave-values.yaml` file. This file contains the configuration for RisingWave.
+
+To install RisingWave, run the following command:
+
+```bash
+chmod +x install_risingwave.sh
+./install_risingwave.sh
+```
+
+To access the RisingWave UI, run the following command for port forwarding:
+
+```bash
+kubectl port-forward svc/risingwave -n risingwave 4567:4567
+```
+
+Then you can access the RisingWave UI in your local machine at:
+
+```bash
+psql -h localhost -p 4567 -d dev -U root
+```
+
+### Connecting RisingWave to Kafka
+
+To [connect RisingWave to Kafka](https://docs.risingwave.com/ingestion/sources/kafka), you need to create a table. A table is a collection of data that is stored in RisingWave. To create a table, you need to specify the name of the table and the columns that the table will contain. The following is the syntax for creating a table. This can be found in the `query.sql` file.
+
+```sql
+CREATE SOURCE my_kafka_source (
+    user_id INT,
+    product_id VARCHAR,
+    timestamp TIMESTAMP
+) WITH (
+    connector='kafka',
+    topic='user_activity',
+    properties.bootstrap.server='broker1:9092,broker2:9092'
+) FORMAT PLAIN ENCODE JSON;
+```
+
+You can run the CREATE TABLE command of the `query.sql` file in the `psql` terminal to create the table.
+
+To check the table, you can run the following command:
+
+```sql
+SELECT * FROM technical_indicators LIMIT 10;
+```
+
+To check the number of values in the table is being added, you can run the following command a few times:
+
+```sql
+SELECT COUNT(*) FROM technical_indicators;
+```
+
+![sql table](images/sql_ti_table.png)
+
+## Uninstalling RisingWave
+
+To uninstall RisingWave, run the following command:
+
+```bash
+helm uninstall risingwave -n risingwave
+```
+
+## Grafana
+
+Grafana is a tool for visualizing data. It is used in the project to visualize the candles data.
+
+To setup Grafana we need the `grafana-values.yaml` file. This file contains the configuration for Grafana.
+
+To install Grafana, run the following command:
+
+```bash
+chmod +x install_grafana.sh
+./install_grafana.sh
+```
+
+To access the Grafana UI, run the following command for port forwarding:
+
+```bash
+kubectl port-forward -n monitoring svc/grafana 3000:80
+```
+
+Then in the Grafana UI, you can login with the following credentials as per the `grafana-values.yaml` file:
+
+```bash
+adminUser: admin
+adminPassword: grafana
+```
+
+Inside the Grafana UI, you can add a data source like PostgreSQL, which is the database that RisingWave uses.
+
+Add the following credentials:
+
+Name: grafana-postgresql-datasource
+Host URL: risingwave.risingwave.svc.cluster.local:4567
+Database: dev
+User: root
+TLS/SSL Mode: disable
+
+![grafana data source](grafana_data_source.png)
+
+Then you can create a dashboard. You can search under dashboards for Candlestick. Then under code, you can copy the code query and paste it there.
+
+```sql
+SELECT open, high, low, close, pair, window_start_ms, window_end_ms, to_timestamp(window_end_ms/1000) as time FROM technical_indicators LIMIT 10;
+```
+
+```sql
+SELECT open, high, low, close, pair, window_start_ms, window_end_ms, to_timestamp(window_end_ms/1000) as time FROM technical_indicators WHERE pair = 'ETH/EUR' ORDER BY window_end_ms DESC LIMIT 10;
+```
+
+![grafana dashboard](images/grafana_dashboard.png)
+
+Then under dashboards -> settings you can take the JSON Model and save it in the `dashboards` folder. This can be imported in the future into Grafana again.
+
 ## Makefile
 
 The project includes a Makefile with several useful commands for development and deployment:
@@ -242,9 +359,3 @@ pre-commit run --all-files
 The Kafka UI is available at the following URL:
 
 <https://kafka-ui.ll-4be9.com/>
-
-## Metrics Server
-
-```bash
-kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
-```

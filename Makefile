@@ -28,10 +28,21 @@ port-forward: ## Port forward the Kafka UI
 	@echo "Port forwarding the Kafka UI..."
 	kubectl -n kafka port-forward svc/kafka-ui 8182:8080
 
-tmux-port-forward: ## Port forward the Kafka UI with tmux
+tmux-port-forward-kafka: ## Port forward the Kafka UI with tmux
 	@echo "Port forwarding the Kafka UI with tmux..."
 	tmux new-session -d 'kubectl -n kafka port-forward svc/kafka-ui 8182:8080'
 	@echo "Port forwarding complete. You can access the Kafka UI at http://localhost:8182"
+
+tmux-port-forward-risingwave: ## Port forward the RisingWave UI with tmux
+	@echo "Port forwarding the RisingWave UI with tmux..."
+	tmux new-session -d 'kubectl port-forward svc/risingwave -n risingwave 4567:4567'
+	@echo "Port forwarding complete. You can access the RisingWave UI at http://localhost:4567"
+
+tmux-port-forward-grafana: ## Port forward the Grafana UI with tmux
+	@echo "Port forwarding the Grafana UI with tmux..."
+	tmux new-session -d 'kubectl port-forward -n monitoring svc/grafana 3000:80'
+	@echo "Port forwarding complete. You can access the Grafana UI at http://localhost:3000"
+
 
 
 # ################################################################################
