@@ -49,20 +49,25 @@ tmux-port-forward-grafana: ## Port forward the Grafana UI with tmux
 # ## Development Trades/Candles
 # ################################################################################
 
-dev: ## Run the trades service
+dev-live: ## Run the service (default is live)
 	uv run services/${service}/src/${service}/main.py
 
-build-for-dev: ## Build the trades service for development
+dev-historical: ## Run the service in historical mode
+	KAFKA_TOPIC_NAME=trades_historical \
+	LIVE_OR_HISTORICAL=historical \
+	uv run services/${service}/src/${service}/main.py
+
+build-for-dev: ## Build the service for development
 	@echo "Building ${service} service..."
 	docker build --build-arg SERVICE_NAME=${service} -t ${service}:dev -f docker/Dockerfile .
 	@echo "Build complete for ${service}:dev"
 
-push-for-dev: ## Push the trades service to the docker registry of the Kind cluster
+push-for-dev: ## Push the service to the docker registry of the Kind cluster
 	@echo "Pushing ${service} service to the docker registry of the Kind cluster..."
 	kind load docker-image ${service}:dev --name rwml-34fa
 	@echo "Push complete for ${service}:dev"
 
-deploy-for-dev: build-for-dev push-for-dev ## Deploy the trades service to the Kind cluster
+deploy-for-dev: build-for-dev push-for-dev ## Deploy the service to the Kind cluster
 	@echo "Deploying ${service} service to the Kind cluster..."
 	kubectl delete -f deployments/dev/${service}/${service}.yaml --ignore-not-found
 	@echo "Deployment deleted for ${service}"
@@ -80,15 +85,36 @@ deploy-for-dev: build-for-dev push-for-dev ## Deploy the trades service to the K
 
 ## NOTE: # The linux/arm64 platform is not supported with non-root users creation as the Dockerfile is currently defined
 
-build-and-push-for-prod: ## Build and push the trades service for production
+# build-and-push-for-prod: ## Build and push the service for production
+# 	@echo "Building ${service} service for production..."
+# 	@export BUILD_DATE=$$(date +%s) && \
+# 	docker buildx build --push \
+# 		--platform linux/amd64 \
+# 		--build-arg SERVICE_NAME=${service} \
+# 		-t ghcr.io/benitomartin/${service}:latest \
+# 		-t ghcr.io/benitomartin/${service}:0.1.5-beta.$${BUILD_DATE} \
+# 		-f docker/Dockerfile .
+
+build-and-push-for-prod: ## Build and push the service for production
 	@echo "Building ${service} service for production..."
-	@export BUILD_DATE=$$(date +%s) && \
+	@BUILD_DATE=$$(date +%s) && \
+	CREATED=$$(date -u +%Y-%m-%dT%H:%M:%SZ) && \
+	GIT_REVISION=$$(git rev-parse HEAD) && \
 	docker buildx build --push \
 		--platform linux/amd64 \
 		--build-arg SERVICE_NAME=${service} \
 		-t ghcr.io/benitomartin/${service}:latest \
-		-t ghcr.io/benitomartin/${service}:0.1.5-beta.$${BUILD_DATE} \
+		-t ghcr.io/benitomartin/${service}:0.1.5-beta.$$BUILD_DATE \
+		-t ghcr.io/benitomartin/${service}:sha-$$GIT_REVISION \
+		--label org.opencontainers.image.revision=$$GIT_REVISION \
+		--label org.opencontainers.image.created=$$CREATED \
+		--label org.opencontainers.image.url="https://github.com/benitomartin/mlops-llm-crypto-predictor/docker/Dockerfile" \
+		--label org.opencontainers.image.title="${service}" \
+		--label org.opencontainers.image.description="${service} Dockerfile" \
+		--label org.opencontainers.image.licenses="MIT" \
+		--label org.opencontainers.image.source="https://github.com/benitomartin/mlops-llm-crypto-predictor" \
 		-f docker/Dockerfile .
+
 
 deploy-for-prod: ## Deploy the service to production
 	@echo "Deploying ${service} service to production..."
@@ -146,6 +172,26 @@ deploy-for-dev-ti: build-for-dev-ti push-for-dev-ti ## Deploy the technical indi
 # 		-t ghcr.io/benitomartin/${service}:0.1.5-beta.$${BUILD_DATE} \
 # 		-f docker/Dockerfile .
 
+build-and-push-for-prod-ti: ## Build and push the service for production
+	@echo "Building ${service} service for production..."
+	@BUILD_DATE=$$(date +%s) && \
+	CREATED=$$(date -u +%Y-%m-%dT%H:%M:%SZ) && \
+	GIT_REVISION=$$(git rev-parse HEAD) && \
+	docker buildx build --push \
+		--platform linux/amd64 \
+		--build-arg SERVICE_NAME=${service} \
+		-t ghcr.io/benitomartin/${service}:latest \
+		-t ghcr.io/benitomartin/${service}:0.1.5-beta.$$BUILD_DATE \
+		-t ghcr.io/benitomartin/${service}:sha-$$GIT_REVISION \
+		--label org.opencontainers.image.revision=$$GIT_REVISION \
+		--label org.opencontainers.image.created=$$CREATED \
+		--label org.opencontainers.image.url="https://github.com/benitomartin/mlops-llm-crypto-predictor/docker/ti.Dockerfile" \
+		--label org.opencontainers.image.title="${service}" \
+		--label org.opencontainers.image.description="${service} Dockerfile" \
+		--label org.opencontainers.image.licenses="MIT" \
+		--label org.opencontainers.image.source="https://github.com/benitomartin/mlops-llm-crypto-predictor" \
+		-f docker/Dockerfile .
+
 # deploy-for-prod: ## Deploy the service to production
 # 	@echo "Deploying ${service} service to production..."
 # 	kubectl delete -f deployments/prod/${service}/${service}.yaml --ignore-not-found
@@ -156,6 +202,23 @@ deploy-for-dev-ti: build-for-dev-ti push-for-dev-ti ## Deploy the technical indi
 # 	@echo "Deploying ${service} service to production..."
 # 	kubectl apply -f deployments/prod/${service}/${service}.yaml
 # 	@echo "Deployment complete for ${service}"
+
+
+################################################################################
+## Backfill
+################################################################################
+
+deploy-backfill: ## Deploy the backfill service to the Kind cluster
+	@echo "Deploying ${service} service to the Kind cluster..."
+	kubectl delete -f deployments/dev/${service}/${service}.yaml --ignore-not-found
+	@echo "Deployment deleted for ${service}"
+	sleep 5
+	@echo "Waiting 5 seconds..."
+
+	@echo "Deploying ${service} service to the Kind cluster..."
+	kubectl apply -f deployments/dev/${service}/${service}.yaml
+	@echo "Deployment complete for ${service}"
+
 
 ################################################################################
 ## Linting and Formatting
