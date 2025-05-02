@@ -178,3 +178,5 @@ state/
 docker_build.sh
 *-secret.yaml
 services/predictor/.env.local
+mem_cpu.sh
+metrics-server-deployment.yaml

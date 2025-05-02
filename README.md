@@ -481,8 +481,96 @@ To run the pre-commit hooks manually, run the following command:
 pre-commit run --all-files
 ```
 
+## Checking CPU and Memory
+
+### Limits and Requests
+
+```bash
+kubectl get pods --all-namespaces -o custom-columns="NAMESPACE:.metadata.namespace,NAME:.metadata.name,CPU_REQUEST:.spec.containers[*].resources.requests.cpu,MEMORY_REQUEST:.spec.containers[*].resources.requests.memory,CPU_LIMIT:.spec.containers[*].resources.limits.cpu,MEMORY_LIMIT:.spec.containers[*].resources.limits.memory"
+```
+
+CPU (Requests/Limits):
+
+- Total requested: ~2.2 vCPU
+- Total limit: ~6–7 vCPU
+
+Memory (Requests/Limits):
+
+- Total requested: ~4.5–5Gi
+- Total limit: ~10–11Gi
+
+![cpu memory](images/cpu_memory.png)
+
+## Current Usage
+
+Install Metrics Server:
+
+```bash
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.7.2/components.yaml
+```
+
+Modify the Metrics Server deployment:
+
+```bash
+kubectl get deployment metrics-server -n kube-system -o yaml > metrics-server-deployment.yaml
+```
+
+Open in code editor and add the following line `--kubelet-insecure-tls` under `args`:
+
+```yaml
+    spec:
+      containers:
+      - args:
+        - --cert-dir=/tmp
+        - --secure-port=10250
+        - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
+        - --kubelet-use-node-status-port
+        - --metric-resolution=15s
+        - --kubelet-insecure-tls
+```
+
+Apply the modified deployment:
+
+```bash
+kubectl apply -f metrics-server-deployment.yaml
+```
+
+Check CPU and memory usage:
+
+```bash
+kubectl top nodes
+kubectl top pods --all-namespaces
+```
+
+![usage](images/usage.png)
+
+### Recommended Civo Cluster Size
+
+Choose at least 1 node with this configuration:
+
+- 3-4 vCPU
+- 7–8 GiB RAM
+
+Or take two nodes for redundancy.
+
+- CPU per node: 2 vCPU
+- Memory per node: 4 GiB RAM
+
+Get Civo instance sizes (get your API key from Civo [here](https://www.civo.com/api/instances))
+
+```bash
+curl -s -H "Authorization: bearer <your-api-key>" https://api.civo.com/v2/sizes | jq -r '[.[] | select(.selectable == true)] | ["Name","Type","CPU","RAM (MiB)","Disk (GB)"], (.[] | [.name, .type, (.cpu_cores|tostring), (.ram_mb|tostring), (.disk_gb|tostring)]) | @tsv' | column -t
+```
+
+![civo instance sizes](images/civo_instance_sizes.png)
+
+Example Civo plan:
+
+- One node: `g4s.kube.large` (4 vCPU / 8GiB RAM).
+  - Cost: 0.06 USD/h, 21.75 USD/month
+- Two nodes: `g4s.kube.medium` (2 vCPU / 4GiB RAM)
+  - Cost: 0.03 USD/h, 43.50 USD/month
+
 ## Kafka UI (Prod)
 
 The Kafka UI is available at the following URL:
-
-<https://kafka-ui.ll-4be9.com/>

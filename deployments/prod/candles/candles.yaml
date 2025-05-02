@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: candles
-  namespace: rwml
+  namespace: ben
   labels:
     app: candles
 spec:
@@ -17,8 +17,7 @@ spec:
     spec:
       containers:
       - name: candles
-        # Replace with the exact tag from your build output
-        image: ghcr.io/benitomartin/candles:0.1.5-beta.1710234567
+        image: ghcr.io/benitomartin/candles:latest
         imagePullPolicy: Always # Make sure to pull the latest images from the github container registry
         env:
         - name: KAFKA_BROKER_ADDRESS
@@ -32,7 +31,10 @@ spec:
         - name: CANDLE_SECONDS
           value: "60"
 
-## TODO:
-
-# This file uses a different namespace than dev
-# Create a new namespace to push to prod
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 1000m
+            memory: 512Mi

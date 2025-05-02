@@ -91,3 +91,6 @@ persistence:
 
 testFramework:
   enabled: false
+
+initChownData:
+  enabled: false
