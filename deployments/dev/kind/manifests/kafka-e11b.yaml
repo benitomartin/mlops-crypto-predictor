@@ -82,6 +82,28 @@ spec:
     topicOperator: {}                               # Enable Kafka Topic Operator for managing Kafka topics
     userOperator: {}                                # Enable Kafka User Operator for managing Kafka users
 
+
+  # entityOperator:
+  #   topicOperator:
+  #     resources:
+  #       requests:
+  #         cpu: "600m"     # Reserve ~15% of 4 cores
+  #         memory: "900Mi"
+  #       limits:
+  #         cpu: "1200m"    # Allow up to 30% of 4 cores
+  #         memory: "1.5Gi"
+  #   userOperator:
+  #     resources:
+  #       requests:
+  #         cpu: "600m"
+  #         memory: "900Mi"
+  #       limits:
+  #         cpu: "1200m"
+  #         memory: "1.5Gi"
+
+
+
+
 ## This restricts the CPU and memory resources for the entity operator pods
 ## Otherwise, the pods will use all the available resources and docker will crash
   # entityOperator:
@@ -138,25 +160,6 @@ spec:
   #       limits:
   #         cpu: "800m"
   #         memory: "1.2Gi"
-
-  # entityOperator:
-  #   topicOperator:
-  #     resources:
-  #       requests:
-  #         cpu: "600m"     # Reserve ~15% of 4 cores
-  #         memory: "900Mi"
-  #       limits:
-  #         cpu: "1200m"    # Allow up to 30% of 4 cores
-  #         memory: "1.5Gi"
-  #   userOperator:
-  #     resources:
-  #       requests:
-  #         cpu: "600m"
-  #         memory: "900Mi"
-  #       limits:
-  #         cpu: "1200m"
-  #         memory: "1.5Gi"
-
 
 
 ## Pods Created from this file

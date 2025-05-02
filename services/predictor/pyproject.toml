@@ -4,10 +4,16 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [
-    { name = "Benito Martin", email = "benitomcue@gmail.com" }
+    { name = "Benito Martin" }
 ]
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "great-expectations>=0.18.22",
+    "mlflow>=2.22.0",
+    "risingwave-py>=0.0.1",
+    "scikit-learn>=1.6.1",
+    "ydata-profiling>=4.16.1",
+]
 
 [build-system]
 requires = ["hatchling"]

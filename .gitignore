@@ -177,3 +177,4 @@ docker/trades.Dockerfile
 state/
 docker_build.sh
 *-secret.yaml
+services/predictor/.env.local

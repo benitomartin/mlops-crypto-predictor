@@ -7,7 +7,6 @@ requires-python = ">=3.12"
 dependencies = [
     "candles",
     "loguru>=0.7.3",
-    "predictor",
     "quixstreams>=3.13.1",
     "technical-indicators",
     "trades",
@@ -27,7 +26,6 @@ members = ["services/trades", "services/candles", "services/technical_indicators
 trades = { workspace = true }
 candles = { workspace = true }
 technical-indicators = { workspace = true }
-predictor = { workspace = true }
 
 [dependency-groups]
 dev = [

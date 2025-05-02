@@ -227,6 +227,12 @@ To check the number of values in the table is being added, you can run the follo
 SELECT COUNT(*) FROM technical_indicators;
 ```
 
+To check the number of values in the table by pair, you can run the following command:
+
+```sql
+SELECT pair, COUNT(*) FROM technical_indicators GROUP BY pair;
+```
+
 ![sql table](images/sql_ti_table.png)
 
 ### Accessing the Minio UI
@@ -332,6 +338,12 @@ SELECT open, high, low, close, pair, window_start_ms, window_end_ms, to_timestam
 ![grafana dashboard](images/grafana_dashboard.png)
 
 Then under dashboards -> settings you can take the JSON Model and save it in the `dashboards` folder. This can be imported in the future into Grafana again.
+
+To uninstall Grafana, run the following command:
+
+```bash
+helm uninstall grafana -n monitoring
+```
 
 ## MLflow
 
