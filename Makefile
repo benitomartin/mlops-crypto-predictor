@@ -21,16 +21,12 @@ stop-kind-cluster: ## Stop the Kind cluster
 
 
 ################################################################################
-## Kafka UI
+## Port Forwarding
 ################################################################################
-
-port-forward: ## Port forward the Kafka UI
-	@echo "Port forwarding the Kafka UI..."
-	kubectl -n kafka port-forward svc/kafka-ui 8182:8080
 
 tmux-port-forward-kafka: ## Port forward the Kafka UI with tmux
 	@echo "Port forwarding the Kafka UI with tmux..."
-	tmux new-session -d 'kubectl -n kafka port-forward svc/kafka-ui 8182:8080'
+	tmux new-session -d 'kubectl port-forward -n kafka svc/kafka-ui 8182:8080'
 	@echo "Port forwarding complete. You can access the Kafka UI at http://localhost:8182"
 
 tmux-port-forward-risingwave: ## Port forward the RisingWave UI with tmux
@@ -43,7 +39,15 @@ tmux-port-forward-grafana: ## Port forward the Grafana UI with tmux
 	tmux new-session -d 'kubectl port-forward -n monitoring svc/grafana 3000:80'
 	@echo "Port forwarding complete. You can access the Grafana UI at http://localhost:3000"
 
+tmux-port-forward-minio: ## Port forward the Minio UI with tmux
+	@echo "Port forwarding the Minio UI with tmux..."
+	tmux new-session -d 'kubectl port-forward -n risingwave svc/risingwave-minio 9001:9001'
+	@echo "Port forwarding complete. You can access the Minio UI at http://localhost:9001"
 
+tmux-port-forward-mlflow: ## Port forward the MLflow UI with tmux
+	@echo "Port forwarding the MLflow UI with tmux..."
+	tmux new-session -d 'kubectl port-forward -n mlflow svc/mlflow-tracking 8889:80'
+	@echo "Port forwarding complete. You can access the MLflow UI at http://localhost:8889"
 
 # ################################################################################
 # ## Development Trades/Candles
@@ -219,6 +223,14 @@ deploy-backfill: ## Deploy the backfill service to the Kind cluster
 	kubectl apply -f deployments/dev/${service}/${service}.yaml
 	@echo "Deployment complete for ${service}"
 
+################################################################################
+## Minio Secret
+################################################################################
+
+minio-secret: ## Create the Minio secret
+	@echo "Creating the Minio secret..."
+	kubectl apply -f deployments/dev/kind/manifests/mlflow-minio-secret.yaml
+	@echo "Minio secret created."
 
 ################################################################################
 ## Linting and Formatting

@@ -229,7 +229,51 @@ SELECT COUNT(*) FROM technical_indicators;
 
 ![sql table](images/sql_ti_table.png)
 
-## Uninstalling RisingWave
+### Accessing the Minio UI
+
+Minio is a tool for storing the runtime state of streaming jobs, such as:
+
+- Operational state
+- Snapshots and checkpoints
+- Internal metadata
+
+As per the `risingwave-values.yaml` file, there will be two buckets created: `risingwave` and `mlflow-d971`.
+
+To access the Minio UI, run the following command for port forwarding:
+
+```bash
+kubectl port-forward -n risingwave svc/risingwave-minio 9001:9001
+```
+
+Then in the Minio UI, you can login with the following credentials as per the `risingwave-values.yaml` file:
+
+```bash
+rootUser: admin
+rootPassword: "minio-D0408AC0"
+```
+
+Once the Minio UI is open, you can see the two buckets created: `risingwave` and `mlflow-d971`. You need to create access keys and add them in the manifest `mlflow-minio-secret.yaml`.
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mlflow-minio-secret
+  namespace: mlflow
+type: Opaque
+stringData:
+  AccessKeyID: VALUE_HERE
+  SecretKey: VALUE_HERE
+```
+
+Then you can apply the secret with this command and visualize it in `k9s` terminal under secrets:
+
+```bash
+kubectl create namespace mlflow
+kubectl apply -f deployments/dev/kind/manifests/mlflow-minio-secret.yaml
+```
+
+### Uninstalling RisingWave
 
 To uninstall RisingWave, run the following command:
 
@@ -273,7 +317,7 @@ Database: dev
 User: root
 TLS/SSL Mode: disable
 
-![grafana data source](grafana_data_source.png)
+![grafana data source](images/grafana_data_source.png)
 
 Then you can create a dashboard. You can search under dashboards for Candlestick. Then under code, you can copy the code query and paste it there.
 
@@ -288,6 +332,77 @@ SELECT open, high, low, close, pair, window_start_ms, window_end_ms, to_timestam
 ![grafana dashboard](images/grafana_dashboard.png)
 
 Then under dashboards -> settings you can take the JSON Model and save it in the `dashboards` folder. This can be imported in the future into Grafana again.
+
+## MLflow
+
+Once you have the Minio UI configured, you can install MLflow with the following commands. Make sure to have the `mlflow-values.yaml` file:
+
+First, you need to create the database and user in RisingWave PostgreSQL. Enter the shell in the PostgreSQL pod:
+
+```bash
+kubectl exec -it -n risingwave risingwave-postgresql-0 -- bash
+```
+
+Then enter the PostgreSQL shell:
+
+```bash
+psql -U postgres -h risingwave-postgresql.risingwave.svc.cluster.local # password: postgres
+```
+
+Then create the database and user:
+
+```sql
+CREATE USER mlflow WITH ENCRYPTED password 'mlflow';
+CREATE DATABASE mlflow WITH ENCODING='UTF8' OWNER=mlflow;
+CREATE DATABASE mlflow_auth WITH ENCODING='UTF8' OWNER=mlflow;
+```
+
+You can see the database and user created:
+
+![mlflow db](images/mlflow_db.png)
+
+You can create the MLflow secret with the following command:
+
+```bash
+kubectl delete secret mlflow-tracking --namespace=mlflow
+```
+
+```bash
+kubectl apply -f deployments/dev/kind/manifests/mlflow-tracking-secret.yaml
+```
+
+or
+
+```bash
+kubectl create secret generic mlflow-tracking \
+  --from-literal=admin-user='your-user' \
+  --from-literal=admin-password='your-password' \
+  --namespace=mlflow
+```
+
+Then you can install MLflow:
+
+```bash
+helm upgrade --install --create-namespace --wait mlflow oci://registry-1.docker.io/bitnamicharts/mlflow --namespace=mlflow --values deployments/dev/kind/manifests/mlflow-values.yaml
+```
+
+![alt text](images/mlflow_deploy.png)
+
+The temporary user and password are in the `mlflow-values.yaml` file. But you can get the password with the following command:
+
+```bash
+kubectl get secret --namespace mlflow mlflow-tracking -o jsonpath="{.data.admin-user }"  | base64 -d
+```
+
+```bash
+kubectl get secrets -n mlflow mlflow-tracking -o json | jq -r '.data."admin-password"' | base64 -d
+```
+
+To uninstall MLflow, run the following command:
+
+```bash
+helm uninstall mlflow -n mlflow
+```
 
 ## Makefile
 

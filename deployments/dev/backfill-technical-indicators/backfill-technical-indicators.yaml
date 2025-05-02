@@ -35,6 +35,13 @@ spec:
       - name: trades-historical
         image: trades:dev
         imagePullPolicy: Never # Use the local image
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "250m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
         env:
         - name: KAFKA_BROKER_ADDRESS
           valueFrom:
@@ -86,6 +93,13 @@ spec:
       - name: candles-historical
         image: candles:dev
         imagePullPolicy: Never # Use the local image
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "250m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
         env:
         - name: KAFKA_BROKER_ADDRESS
           valueFrom:
@@ -133,6 +147,13 @@ spec:
       - name: technical-indicators-historical
         image: technical-indicators:dev
         imagePullPolicy: Never # Use the local image
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "250m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
         env:
         - name: KAFKA_BROKER_ADDRESS
           valueFrom:

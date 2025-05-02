@@ -176,3 +176,4 @@ cython_debug/
 docker/trades.Dockerfile
 state/
 docker_build.sh
+*-secret.yaml
