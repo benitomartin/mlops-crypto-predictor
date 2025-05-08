@@ -416,6 +416,8 @@ To uninstall MLflow, run the following command:
 helm uninstall mlflow -n mlflow
 ```
 
+> NOTE: To run the `train.py` in the predictor service, you need to port-forward the MLflow UI and RisingWave UI.
+
 ## Makefile
 
 The project includes a Makefile with several useful commands for development and deployment:

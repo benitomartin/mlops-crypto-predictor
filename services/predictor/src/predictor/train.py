@@ -15,7 +15,6 @@ Has the following steps:
 
 import os
 
-import great_expectations as ge
 import mlflow
 import pandas as pd
 from loguru import logger
@@ -23,7 +22,12 @@ from risingwave import OutputFormat, RisingWave, RisingWaveConnOptions
 from sklearn.metrics import mean_absolute_error
 from ydata_profiling import ProfileReport
 
-from predictor.models import BaselineModel
+from predictor.data_validation import validate_data
+from predictor.models import (
+    BaselineModel,
+    get_model_candidates,
+    get_model_obj,
+)
 from predictor.names import get_experiment_name
 
 
@@ -34,7 +38,7 @@ def load_ts_data_from_risingwave(
     password: str,
     database: str,
     pair: str,
-    days_in_past: int,
+    training_data_horizon_days: int,
     candle_seconds: int,
 ) -> pd.DataFrame:
     """
@@ -47,7 +51,7 @@ def load_ts_data_from_risingwave(
         password (str): Password for database authentication.
         database (str): Name of the database to connect to.
         pair (str): Trading pair symbol (e.g., 'BTC_USDT').
-        days_in_past (int): Number of days of historical data to retrieve.
+        training_data_horizon_days (int): Number of days of historical data to retrieve.
         candle_seconds (int): Candle interval in seconds (e.g., 60 for 1-minute candles).
 
     Returns:
@@ -56,54 +60,52 @@ def load_ts_data_from_risingwave(
 
     logger.info("Establishing connection to RisingWave")
     rw = RisingWave(
-        RisingWaveConnOptions.from_connection_info(
-            host=host, port=port, user=user, password=password, database=database
-        )
+        RisingWaveConnOptions.from_connection_info(host=host, port=port, user=user, password=password, database=database)
     )
     query = f"""
             SELECT *
             FROM technical_indicators
             WHERE pair = '{pair}'
             AND candle_seconds = {candle_seconds}
-            AND to_timestamp(window_start_ms / 1000) > now() - interval '{days_in_past} days'
+            AND to_timestamp(window_start_ms / 1000) > now() - interval '{training_data_horizon_days} days'
             ORDER BY window_start_ms;
             """
 
     ts_data = rw.fetch(query, format=OutputFormat.DATAFRAME)
 
-    logger.info(f"Fetched {len(ts_data)} rows of data for {pair} in the last {days_in_past} days")
+    logger.info(f"Fetched {len(ts_data)} rows of data for {pair} in the last {training_data_horizon_days} days")
 
     return ts_data
 
 
-def validate_data(ts_data: pd.DataFrame) -> None:
-    """
-    Validates the integrity of time-series data using Great Expectations.
+# def validate_data(ts_data: pd.DataFrame) -> None:
+#     """
+#     Validates the integrity of time-series data using Great Expectations.
 
-    Currently checks:
-        - 'close' column has all values >= 0
+#     Currently checks:
+#         - 'close' column has all values >= 0
 
-    Raises:
-        Exception: If any validation check fails.
+#     Raises:
+#         Exception: If any validation check fails.
 
-    TODO:
-        - Check for null values in important columns
-        - Ensure there are no duplicate timestamps
-        - Confirm data is sorted by time (e.g., 'window_start_ms')
-        - Validate data types and expected ranges for other columns
-    """
+#     TODO:
+#         - Check for null values in important columns
+#         - Ensure there are no duplicate timestamps
+#         - Confirm data is sorted by time (e.g., 'window_start_ms')
+#         - Validate data types and expected ranges for other columns
+#     """
 
-    ge_df = ge.from_pandas(ts_data)
+#     ge_df = ge.from_pandas(ts_data)
 
-    validation_result = ge_df.expect_column_values_to_be_between(
-        column="close",
-        min_value=0,
-    )
+#     validation_result = ge_df.expect_column_values_to_be_between(
+#         column="close",
+#         min_value=0,
+#     )
 
-    if not validation_result.success:
-        raise Exception('Column "close" has values less than 0')
+#     if not validation_result.success:
+#         raise Exception('Column "close" has values less than 0')
 
-    # TODO: Add more validation checks
+#     # TODO: Add more validation checks
 
 
 def generate_exploratory_data_analysis_report(
@@ -130,7 +132,11 @@ def generate_exploratory_data_analysis_report(
 
 
 def prepare_data(
-    ts_data: pd.DataFrame, prediction_horizon_seconds: int, candle_seconds: int, train_test_split_ratio: float
+    ts_data: pd.DataFrame,
+    prediction_horizon_seconds: int,
+    candle_seconds: int,
+    train_test_split_ratio: float,
+    features: list[str],
 ) -> tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Series]:
     """
     Prepares time-series data for supervised learning by creating a prediction target and
@@ -153,7 +159,7 @@ def prepare_data(
     """
     # Add target column by shifting 'close' into the future
     steps_ahead = prediction_horizon_seconds // candle_seconds
-    ts_data = ts_data.copy()  # Avoid mutating original DataFrame
+    ts_data = ts_data[features]  # Keep only the features we need
     ts_data["target"] = ts_data["close"].shift(-steps_ahead)
 
     # Drop rows with NaN target (due to shifting)
@@ -181,10 +187,14 @@ def train(
     risingwave_password: str,
     risingwave_database: str,
     pair: str,
-    days_in_past: int,
+    training_data_horizon_days: int,
     candle_seconds: int,
     prediction_horizon_seconds: int,
     train_test_split_ratio: float,
+    features: list[str],
+    hyperparam_search_trials: int = 5,
+    model_name: str | None = None,
+    n_model_candidates: int | None = 1,
     n_rows_for_data_profiling: int | None = None,
     eda_report_html_path: str | None = "./eda_report.html",
 ) -> None:
@@ -206,7 +216,7 @@ def train(
         risingwave_password (str): Password for RisingWave authentication.
         risingwave_database (str): Database name in RisingWave.
         pair (str): Trading pair (e.g., 'BTC_USDT').
-        days_in_past (int): Number of past days to fetch data for.
+        training_data_horizon_days (int): Number of past days to fetch data for.
         candle_seconds (int): Candle size in seconds.
         prediction_horizon_seconds (int): Prediction horizon in seconds.
         train_test_split_ratio (float): Ratio of data for training vs testing.
@@ -229,6 +239,18 @@ def train(
 
     with mlflow.start_run():
         logger.info("Starting MLflow run")
+        mlflow.log_param("features", features)
+        mlflow.log_param("pair", pair)
+        mlflow.log_param("training_data_horizon_days", training_data_horizon_days)
+        mlflow.log_param("candle_seconds", candle_seconds)
+        mlflow.log_param("prediction_horizon_seconds", prediction_horizon_seconds)
+        mlflow.log_param("train_test_split_ratio", train_test_split_ratio)
+        # mlflow.log_param('data_profiling_n_rows', data_profiling_n_rows)
+        if model_name:
+            mlflow.log_param("model_name", model_name)
+        # mlflow.log_param(
+        #     'max_percentage_diff_mae_wrt_baseline', max_percentage_diff_mae_wrt_baseline
+        # )
 
         # Step 1. Load technical indicators data from RisingWave
         ts_data = load_ts_data_from_risingwave(
@@ -238,7 +260,7 @@ def train(
             password=risingwave_password,
             database=risingwave_database,
             pair=pair,
-            days_in_past=days_in_past,
+            training_data_horizon_days=training_data_horizon_days,
             candle_seconds=candle_seconds,
         )
 
@@ -251,7 +273,7 @@ def train(
             {
                 "ts_data_shape": ts_data.shape,
                 "pair": pair,
-                "days_in_past": days_in_past,
+                "training_data_horizon_days": training_data_horizon_days,
                 "candle_seconds": candle_seconds,
                 "prediction_horizon_seconds": prediction_horizon_seconds,
                 "train_test_split_ratio": train_test_split_ratio,
@@ -260,7 +282,11 @@ def train(
 
         # Step 2 & 5. Prepare data (add target column and split)
         X_train, y_train, X_test, y_test = prepare_data(
-            ts_data, prediction_horizon_seconds, candle_seconds, train_test_split_ratio
+            ts_data,
+            prediction_horizon_seconds,
+            candle_seconds,
+            train_test_split_ratio,
+            features,
         )
 
         # Log dataset info
@@ -281,17 +307,13 @@ def train(
         os.remove(ts_data_csv_path)  # Clean up
 
         # Step 3. Validate the data
-        validate_data(ts_data)
+        validate_data(ts_data, max_percentage_rows_with_missing_values=5)  # Example value
 
         # Step 4. Profile the data
         if eda_report_html_path is not None:
-            ts_data_to_profile = (
-                ts_data.head(n_rows_for_data_profiling) if n_rows_for_data_profiling else ts_data
-            )
+            ts_data_to_profile = ts_data.head(n_rows_for_data_profiling) if n_rows_for_data_profiling else ts_data
 
-            generate_exploratory_data_analysis_report(
-                ts_data_to_profile, output_html_path=eda_report_html_path
-            )
+            generate_exploratory_data_analysis_report(ts_data_to_profile, output_html_path=eda_report_html_path)
 
             logger.info("Pushing EDA report to MLflow")
             mlflow.log_artifact(local_path=eda_report_html_path, artifact_path="eda_report")
@@ -306,29 +328,70 @@ def train(
         mlflow.log_metric("test_mae_baseline", test_mae_baseline)
         logger.info(f"Test MAE for Baseline model: {test_mae_baseline:.4f}")
 
-        # Step 7. Train XGBoost model (TODO)
-        # TODO: Implement XGBoost model training
+        # Step 8. Find the best candidate model, if `model_name` is not provided.
+        if model_name is None:
+            # We fit N models with default hyperparameters for the given
+            # (X_train, y_train), and evaluate them with (X_test, y_test)
+            # to find the best `n_model_candidates` models
+            if n_model_candidates is None:
+                raise ValueError("n_model_candidates cannot be None")
 
-        # Step 8. Validate final model (TODO)
-        # TODO: Implement model validation
+            model_names = get_model_candidates(X_train, y_train, X_test, y_test, n_candidates=n_model_candidates)
 
-        # Step 9. Push model to registry if it's good (TODO)
-        # TODO: Implement model registry push
+            # TODO: this is a hack that works when we have only one candidate model
+            # How would you modify this code to use a list of candiate models, and adjust
+            # their hyperparameters in the next step?
+            model_name = model_names[0]
+
+        model = get_model_obj(model_name)
+
+        # Step 9. Train the choosen model with hyperparameter search.
+        logger.info(f"Start training model {model} with hyperparameter search")
+        model.fit(X_train, y_train, hyperparameter_search_trials=hyperparam_search_trials)
+
+        # Step 10. Validate the model
+        y_pred = model.predict(X_test)
+        test_mae = mean_absolute_error(y_test, y_pred)
+        mlflow.log_metric("test_mae", test_mae)
+        logger.info(f"Test MAE for model {model}: {test_mae:.4f}")
+
+        # # Step 11. Push the model to the model registry
+        # mae_diff = (test_mae - test_mae_baseline) / test_mae_baseline
+        # if mae_diff <= max_percentage_diff_mae_wrt_baseline:
+        #     logger.info(
+        #         f'Model MAE is {mae_diff:.4f} < {max_percentage_diff_mae_wrt_baseline}'
+        #     )
+        #     logger.info('Pushing model to the registry')
+        #     model_name = get_model_name(
+        #         pair, candle_seconds, prediction_horizon_seconds
+        #     )
+        #     push_model(model, X_test, model_name)
+        # else:
+        #     logger.info(
+        #         f'The model {model_name} MAE is {mae_diff:.4f} > {max_percentage_diff_mae_wrt_baseline}'
+        #     )
+        #     logger.info('Model NOT PUSHED to the registry')
 
 
 if __name__ == "__main__":
+    from predictor.config import training_config as config
+
     train(
-        mlflow_tracking_uri="http://localhost:8889",
-        risingwave_host="localhost",
-        risingwave_port=4567,
-        risingwave_user="root",
-        risingwave_password="",
-        risingwave_database="dev",
-        pair="BTC/USD",
-        days_in_past=10,
-        candle_seconds=60,
-        prediction_horizon_seconds=300,
-        train_test_split_ratio=0.8,
-        n_rows_for_data_profiling=100,
-        eda_report_html_path="./eda_report.html",
+        mlflow_tracking_uri=config.mlflow_tracking_uri,
+        risingwave_host=config.risingwave_host,
+        risingwave_port=config.risingwave_port,
+        risingwave_user=config.risingwave_user,
+        risingwave_password=config.risingwave_password,
+        risingwave_database=config.risingwave_database,
+        pair=config.pair,
+        training_data_horizon_days=config.training_data_horizon_days,
+        candle_seconds=config.candle_seconds,
+        prediction_horizon_seconds=config.prediction_horizon_seconds,
+        train_test_split_ratio=config.train_test_split_ratio,
+        features=config.features,
+        hyperparam_search_trials=config.hyperparam_search_trials,
+        model_name=config.model_name,
+        n_model_candidates=config.n_model_candidates,
+        n_rows_for_data_profiling=config.n_rows_for_data_profiling,
+        eda_report_html_path=config.eda_report_html_path,
     )
