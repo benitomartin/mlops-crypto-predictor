@@ -264,7 +264,7 @@ def train(
             candle_seconds=candle_seconds,
         )
 
-        # Log the dataset
+        # Log the Dataset
         dataset = mlflow.data.from_pandas(ts_data)
         mlflow.log_input(dataset, context="training")
 
