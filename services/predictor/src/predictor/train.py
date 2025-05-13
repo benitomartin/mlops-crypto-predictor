@@ -23,6 +23,7 @@ from sklearn.metrics import mean_absolute_error
 from ydata_profiling import ProfileReport
 
 from predictor.data_validation import validate_data
+from predictor.model_registry import get_model_name, push_model
 from predictor.models import (
     BaselineModel,
     get_model_candidates,
@@ -76,36 +77,6 @@ def load_ts_data_from_risingwave(
     logger.info(f"Fetched {len(ts_data)} rows of data for {pair} in the last {training_data_horizon_days} days")
 
     return ts_data
-
-
-# def validate_data(ts_data: pd.DataFrame) -> None:
-#     """
-#     Validates the integrity of time-series data using Great Expectations.
-
-#     Currently checks:
-#         - 'close' column has all values >= 0
-
-#     Raises:
-#         Exception: If any validation check fails.
-
-#     TODO:
-#         - Check for null values in important columns
-#         - Ensure there are no duplicate timestamps
-#         - Confirm data is sorted by time (e.g., 'window_start_ms')
-#         - Validate data types and expected ranges for other columns
-#     """
-
-#     ge_df = ge.from_pandas(ts_data)
-
-#     validation_result = ge_df.expect_column_values_to_be_between(
-#         column="close",
-#         min_value=0,
-#     )
-
-#     if not validation_result.success:
-#         raise Exception('Column "close" has values less than 0')
-
-#     # TODO: Add more validation checks
 
 
 def generate_exploratory_data_analysis_report(
@@ -195,8 +166,9 @@ def train(
     hyperparam_search_trials: int = 5,
     model_name: str | None = None,
     n_model_candidates: int | None = 1,
-    n_rows_for_data_profiling: int | None = None,
+    data_profiling_n_rows: int | None = None,
     eda_report_html_path: str | None = "./eda_report.html",
+    max_percentage_diff_mae_wrt_baseline: float | None = 0.10,
 ) -> None:
     """
     Orchestrates the ML training pipeline for a time-series forecasting task using technical indicators.
@@ -220,7 +192,7 @@ def train(
         candle_seconds (int): Candle size in seconds.
         prediction_horizon_seconds (int): Prediction horizon in seconds.
         train_test_split_ratio (float): Ratio of data for training vs testing.
-        n_rows_for_data_profiling (int | None): Number of rows to use for profiling (default: all).
+        data_profiling_n_rows (int | None): Number of rows to use for profiling (default: all).
         eda_report_html_path (str | None): Output path for EDA HTML report (default: './eda_report.html').
 
     Returns:
@@ -245,12 +217,10 @@ def train(
         mlflow.log_param("candle_seconds", candle_seconds)
         mlflow.log_param("prediction_horizon_seconds", prediction_horizon_seconds)
         mlflow.log_param("train_test_split_ratio", train_test_split_ratio)
-        # mlflow.log_param('data_profiling_n_rows', data_profiling_n_rows)
+        mlflow.log_param("data_profiling_n_rows", data_profiling_n_rows)
         if model_name:
             mlflow.log_param("model_name", model_name)
-        # mlflow.log_param(
-        #     'max_percentage_diff_mae_wrt_baseline', max_percentage_diff_mae_wrt_baseline
-        # )
+        mlflow.log_param("max_percentage_diff_mae_wrt_baseline", max_percentage_diff_mae_wrt_baseline)
 
         # Step 1. Load technical indicators data from RisingWave
         ts_data = load_ts_data_from_risingwave(
@@ -311,7 +281,7 @@ def train(
 
         # Step 4. Profile the data
         if eda_report_html_path is not None:
-            ts_data_to_profile = ts_data.head(n_rows_for_data_profiling) if n_rows_for_data_profiling else ts_data
+            ts_data_to_profile = ts_data.head(data_profiling_n_rows) if data_profiling_n_rows else ts_data
 
             generate_exploratory_data_analysis_report(ts_data_to_profile, output_html_path=eda_report_html_path)
 
@@ -355,22 +325,16 @@ def train(
         mlflow.log_metric("test_mae", test_mae)
         logger.info(f"Test MAE for model {model}: {test_mae:.4f}")
 
-        # # Step 11. Push the model to the model registry
-        # mae_diff = (test_mae - test_mae_baseline) / test_mae_baseline
-        # if mae_diff <= max_percentage_diff_mae_wrt_baseline:
-        #     logger.info(
-        #         f'Model MAE is {mae_diff:.4f} < {max_percentage_diff_mae_wrt_baseline}'
-        #     )
-        #     logger.info('Pushing model to the registry')
-        #     model_name = get_model_name(
-        #         pair, candle_seconds, prediction_horizon_seconds
-        #     )
-        #     push_model(model, X_test, model_name)
-        # else:
-        #     logger.info(
-        #         f'The model {model_name} MAE is {mae_diff:.4f} > {max_percentage_diff_mae_wrt_baseline}'
-        #     )
-        #     logger.info('Model NOT PUSHED to the registry')
+        # Step 11. Push the model to the model registry
+        mae_diff = (test_mae - test_mae_baseline) / test_mae_baseline
+        if mae_diff <= max_percentage_diff_mae_wrt_baseline:
+            logger.info(f"Model MAE is {mae_diff:.4f} < {max_percentage_diff_mae_wrt_baseline}")
+            logger.info("Pushing model to the registry")
+            model_name = get_model_name(pair, candle_seconds, prediction_horizon_seconds)
+            push_model(model, X_test, model_name)
+        else:
+            logger.info(f"The model {model_name} MAE is {mae_diff:.4f} > {max_percentage_diff_mae_wrt_baseline}")
+            logger.info("Model NOT PUSHED to the registry")
 
 
 if __name__ == "__main__":
@@ -392,6 +356,7 @@ if __name__ == "__main__":
         hyperparam_search_trials=config.hyperparam_search_trials,
         model_name=config.model_name,
         n_model_candidates=config.n_model_candidates,
-        n_rows_for_data_profiling=config.n_rows_for_data_profiling,
+        data_profiling_n_rows=config.data_profiling_n_rows,
         eda_report_html_path=config.eda_report_html_path,
+        max_percentage_diff_mae_wrt_baseline=config.max_percentage_diff_mae_wrt_baseline,
     )

@@ -223,6 +223,28 @@ deploy-backfill: ## Deploy the backfill service to the Kind cluster
 	kubectl apply -f deployments/dev/${service}/${service}.yaml
 	@echo "Deployment complete for ${service}"
 
+#################################################################################
+## Training
+#################################################################################
+
+build-for-dev-training: ## Build the training service for development
+	@echo "Building training service..."
+	docker build --build-arg SERVICE_NAME=predictor -t training-pipeline:dev -f docker/training-pipeline.Dockerfile .
+	@echo "Build complete for training-pipeline:dev"
+
+push-for-dev-training: build-for-dev-training ## Push the training service to the docker registry of the Kind cluster
+	@echo "Pushing training service to the docker registry of the Kind cluster..."
+	kind load docker-image training-pipeline:dev --name rwml-34fa
+	@echo "Push complete for training-pipeline:dev"
+
+
+
+cron-kustomize: ## Deploy the training service to the Kind cluster
+	@echo "Deploying training service to the Kind cluster..."
+	kubectl apply -k deployments/dev/training-pipeline
+	@echo "Deployment complete for training service"
+
+
 ################################################################################
 ## Minio Secret
 ################################################################################

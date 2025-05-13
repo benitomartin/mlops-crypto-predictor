@@ -418,6 +418,28 @@ helm uninstall mlflow -n mlflow
 
 > NOTE: To run the `train.py` in the predictor service, you need to port-forward the MLflow UI and RisingWave UI.
 
+## Training Pipeline
+
+The training pipeline is a Kubernetes CronJob that runs the `train.py` script in the predictor service. The script is executed in a container based on the `training-pipeline:dev` image.
+
+To deploy the training pipeline, run the following command:
+
+```bash
+make cron-kustomize
+```
+
+To check the training pipeline, run the following command:
+
+```bash
+kubectl get cronjobs -n rwml
+```
+
+To check the next scheduled time for the training pipeline, run the following command:
+
+```bash
+kubectl describe cronjobs -n rwml
+```
+
 ## Makefile
 
 The project includes a Makefile with several useful commands for development and deployment:
