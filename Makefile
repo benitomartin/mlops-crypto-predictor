@@ -237,13 +237,29 @@ push-for-dev-training: build-for-dev-training ## Push the training service to th
 	kind load docker-image training-pipeline:dev --name rwml-34fa
 	@echo "Push complete for training-pipeline:dev"
 
-
-
-cron-kustomize: ## Deploy the training service to the Kind cluster
+cron-kustomize-training: ## Deploy the training service to the Kind cluster
 	@echo "Deploying training service to the Kind cluster..."
 	kubectl apply -k deployments/dev/training-pipeline
 	@echo "Deployment complete for training service"
 
+#################################################################################
+## Prediction
+#################################################################################
+
+build-for-dev-prediction: ## Build the prediction service for development
+	@echo "Building prediction service..."
+	docker build --build-arg SERVICE_NAME=predictor -t prediction-generator:dev -f docker/prediction-generator.Dockerfile .
+	@echo "Build complete for prediction-generator:dev"
+
+push-for-dev-prediction: build-for-dev-prediction ## Push the prediction service to the docker registry of the Kind cluster
+	@echo "Pushing prediction service to the docker registry of the Kind cluster..."
+	kind load docker-image prediction-generator:dev --name rwml-34fa
+	@echo "Push complete for prediction-generator:dev"
+
+cron-kustomize-prediction: ## Deploy the prediction service to the Kind cluster
+	@echo "Deploying prediction service to the Kind cluster..."
+	kubectl apply -k deployments/dev/prediction-generator
+	@echo "Deployment complete for prediction service"
 
 ################################################################################
 ## Minio Secret

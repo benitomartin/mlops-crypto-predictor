@@ -1,0 +1,25 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prediction-generator
+  namespace: rwml
+data:
+  # Quote them!!! - by Marius
+  # https://12factor.net/config
+  MLFLOW_TRACKING_URI: "http://mlflow-tracking.mlflow.svc.cluster.local:80"
+  RISINGWAVE_HOST: "risingwave.risingwave.svc.cluster.local"
+  RISINGWAVE_PORT: "4567"
+  RISINGWAVE_USER: "root"
+  RISINGWAVE_PASSWORD: ""
+  RISINGWAVE_DATABASE: "dev"
+  RISINGWAVE_INPUT_TABLE: "technical_indicators"
+  RISINGWAVE_OUTPUT_TABLE: "predictions"
+  PAIR: "BTC/USD"
+  PREDICTION_HORIZON_SECONDS: "300"
+  CANDLE_SECONDS: "60"
+  MODEL_VERSION: "latest"
+
+---
+## Apply the secret
+## kubectl apply -f deployments/dev/prediction-generator/prediction-generator-secret.yaml
