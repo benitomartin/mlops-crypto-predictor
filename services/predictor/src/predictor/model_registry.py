@@ -11,6 +11,9 @@ def get_model_name(pair: str, candle_seconds: int, prediction_horizon_seconds: i
     Returns the model name for the given pair, candle seconds, and prediction horizon
     seconds.
     """
+    # Ensure consistent formatting between training and prediction
+    # The training log shows "BTC-USD_60_300" was registered
+    # But prediction is looking for the same model name
     return f"{pair.replace('/', '-')}_{candle_seconds}_{prediction_horizon_seconds}"
 
 
@@ -31,6 +34,13 @@ def load_model(
         The model object and the model's feature list.
 
     """
+    # Make sure MLflow tracking URI is set before loading the model
+    from predictor.config import predictor_config
+
+    mlflow.set_tracking_uri(predictor_config.mlflow_tracking_uri)
+
+    logger.info(f"Loading model from MLflow tracking URI: {mlflow.get_tracking_uri()}")
+
     model = mlflow.sklearn.load_model(model_uri=f"models:/{model_name}/{model_version}")
 
     # Get the model info which contains the signature

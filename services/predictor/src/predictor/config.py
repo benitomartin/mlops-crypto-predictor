@@ -51,7 +51,8 @@ training_config = TrainingConfig()
 
 
 class PredictorConfig(BaseSettings):
-    mlflow_tracking_uri: str = "http://localhost:8283"
+    # Update this to match the training URI
+    mlflow_tracking_uri: str = "http://localhost:8889"
     risingwave_host: str = "localhost"
     risingwave_port: int = 4567
     risingwave_user: str = "root"
