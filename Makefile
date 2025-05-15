@@ -194,7 +194,7 @@ build-and-push-for-prod-ti: ## Build and push the service for production
 		--label org.opencontainers.image.description="${service} Dockerfile" \
 		--label org.opencontainers.image.licenses="MIT" \
 		--label org.opencontainers.image.source="https://github.com/benitomartin/mlops-llm-crypto-predictor" \
-		-f docker/Dockerfile .
+		-f docker/ti.Dockerfile .
 
 # deploy-for-prod: ## Deploy the service to production
 # 	@echo "Deploying ${service} service to production..."

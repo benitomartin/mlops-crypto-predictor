@@ -1,0 +1,167 @@
+#
+# Create a topic from inside the k8s cluster, in the pod
+# bin/kafka-topics.sh --bootstrap-server kafka-e11b-kafka-bootstrap:9092 --topic first_topic --create --partitions 3 --replication-factor 1
+#
+# Verify local with kcat:
+#
+# echo "{'key': 'value'}" | kcat -b 127.0.0.1:9092 -P -t first_topic
+#
+# kcat -b 127.0.0.1:9092 -C -t first_topic
+#
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaNodePool
+metadata:
+  name: dual-role
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: kafka-e11b
+spec:
+  replicas: 1
+  roles:
+    - controller
+    - broker
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        type: persistent-claim
+        size: 10Gi
+        deleteClaim: false
+        kraftMetadata: shared
+
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: Kafka
+metadata:
+  name: kafka-e11b
+  namespace: kafka
+  annotations:
+    strimzi.io/node-pools: enabled
+    strimzi.io/kraft: enabled
+spec:
+  kafka:
+    version: 3.9.0
+    metadataVersion: 3.9-IV0
+    listeners:
+      - name: plain
+        port: 9092              # Internal Kafka port for communication within the cluster (used for communication between brokers and the Kafka UI)
+        type: internal
+        tls: false
+
+      - name: external
+        port: 9094              # External port used for communication with clients outside the Kubernetes cluster
+        type: nodeport
+        tls: false
+        configuration:
+          bootstrap:
+            nodePort: 31092     # Expose the external listener (9094) on this NodePort (mapped to port 9092 on the host)
+
+
+          brokers:
+            - broker: 0
+              advertisedHost: 127.0.0.1             # Advertise Kafka broker 0 on localhost
+              nodePort: 31234                       # External port for broker 0
+
+            - broker: 1
+              advertisedHost: 127.0.0.1             # Advertise Kafka broker 1 on localhost
+              nodePort: 31235                       # External port for broker 1
+
+            - broker: 2
+              advertisedHost: 127.0.0.1             # Advertise Kafka broker 2 on localhost
+              nodePort: 31236                       # External port for broker 2
+
+    config:
+      offsets.topic.replication.factor: 1           # Set replication factor for Kafka's offsets topic
+      transaction.state.log.replication.factor: 1   # Set replication factor for Kafka's transaction log
+      transaction.state.log.min.isr: 1              # Minimum in-sync replicas for the transaction log
+      default.replication.factor: 1                 # Default replication factor for topics
+      min.insync.replicas: 1                        # Minimum number of in-sync replicas for producers to write
+
+  entityOperator:
+    topicOperator: {}                               # Enable Kafka Topic Operator for managing Kafka topics
+    userOperator: {}                                # Enable Kafka User Operator for managing Kafka users
+
+
+  # entityOperator:
+  #   topicOperator:
+  #     resources:
+  #       requests:
+  #         cpu: "600m"     # Reserve ~15% of 4 cores
+  #         memory: "900Mi"
+  #       limits:
+  #         cpu: "1200m"    # Allow up to 30% of 4 cores
+  #         memory: "1.5Gi"
+  #   userOperator:
+  #     resources:
+  #       requests:
+  #         cpu: "600m"
+  #         memory: "900Mi"
+  #       limits:
+  #         cpu: "1200m"
+  #         memory: "1.5Gi"
+
+
+
+
+## This restricts the CPU and memory resources for the entity operator pods
+## Otherwise, the pods will use all the available resources and docker will crash
+  # entityOperator:
+  #   topicOperator:
+  #     resources:
+  #       requests:
+  #         cpu: "250m" # 300m
+  #         memory: "512Mi" # 600Mi
+  #       limits:
+  #         cpu: "500m" # 600m
+  #         memory: "768Mi" # 1Gi
+  #   userOperator:
+  #     resources:
+  #       requests:
+  #         cpu: "250m" # 300m
+  #         memory: "512Mi" # 600Mi
+  #       limits:
+  #         cpu: "500m" # 600m
+  #         memory: "768Mi" # 1Gi
+
+  # entityOperator:
+  #   topicOperator:
+  #     resources:
+  #       requests:
+  #         cpu: "300m" # 300m
+  #         memory: "600Mi" # 600Mi
+  #       limits:
+  #         cpu: "600m" # 600m
+  #         memory: "1Gi" # 1Gi
+  #   userOperator:
+  #     resources:
+  #       requests:
+  #         cpu: "300m" # 300m
+  #         memory: "600Mi" # 600Mi
+  #       limits:
+  #         cpu: "600m" # 600m
+  #         memory: "1Gi" # 1Gi
+
+
+  # entityOperator:
+  #   topicOperator:
+  #     resources:
+  #       requests:
+  #         cpu: "400m"     # Moderate reservation (10% of 4 cores)
+  #         memory: "700Mi" # Slight bump to avoid memory pressure
+  #       limits:
+  #         cpu: "800m"     # Up to 20% of 4 cores
+  #         memory: "1.2Gi" # Allows spikes
+  #   userOperator:
+  #     resources:
+  #       requests:
+  #         cpu: "400m"
+  #         memory: "700Mi"
+  #       limits:
+  #         cpu: "800m"
+  #         memory: "1.2Gi"
+
+
+## Pods Created from this file
+# kafka-e11b-dual-role-0
+# kafka-e11b-entity-operator-XXXXXX

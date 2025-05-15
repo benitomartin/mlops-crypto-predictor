@@ -425,7 +425,7 @@ The training pipeline is a Kubernetes CronJob that runs the `train.py` script in
 To deploy the training pipeline, run the following command:
 
 ```bash
-make cron-kustomize
+make cron-kustomize-training
 ```
 
 To check the training pipeline, run the following command:
@@ -595,6 +595,47 @@ Example Civo plan:
 - Two nodes: `g4s.kube.medium` (2 vCPU / 4GiB RAM)
   - Cost: 0.03 USD/h, 43.50 USD/month
 
-## Kafka UI (Prod)
+# Civo Configuration
 
-The Kafka UI is available at the following URL:
+Change the context to the Civo cluster configuration file:
+
+```bash
+export KUBECONFIG=~/.kube/config:~/.kube/civo-crypto-cluster-kubeconfig
+kubectl config get-contexts
+kubectl config use-context <your-civo-context-name>
+```
+
+Create a namespace for the project:
+
+```bash
+kubectl create namespace ben
+```
+
+Authenticate to the GitHub Container Registry (ghcr.io) by creating a secret in the `ben` namespace:
+
+```bash
+kubectl create secret docker-registry ghcr-creds \
+  --docker-server=https://ghcr.io \
+  --docker-username=GITHUB_USERNAME \
+  --docker-password=YOUR_GITHUB_PAT \
+  --namespace=ben
+```
+
+Apply the Kafka configuration:
+
+```bash
+kubeclt apply -f deployments/prod/kind/install_kafka_prod.sh
+kubeclt apply -f deployments/prod/kind/install_kafka_ui_prod.sh
+```
+
+To see the Kafka UI, make sure to add the NodePort to the Civo Firewall Inbound Rules and restrict it to your CIDR.
+
+Deploy the services:
+
+```bash
+kubectl apply -f deployments/prod/trades/trades.yaml
+kubectl apply -f deployments/prod/candles/candles.yaml
+kubectl apply -f deployments/prod/technical-indicators/technical-indicators.yaml
+```
+
+The Kafka UI will be available at `http://<your-civo-cluster-ip>:<NodePort>`.

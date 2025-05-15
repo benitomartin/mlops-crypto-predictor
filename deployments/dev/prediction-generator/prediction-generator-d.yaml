@@ -30,15 +30,16 @@ spec:
         #
         - name: MLFLOW_TRACKING_USERNAME
           valueFrom:
-            configMapKeyRef:
-              name: prediction-generator
+            secretKeyRef:
+              name: prediction-pipeline-secret
               key: MLFLOW_TRACKING_USERNAME
         #
         - name: MLFLOW_TRACKING_PASSWORD
           valueFrom:
-            configMapKeyRef:
-              name: prediction-generator
+            secretKeyRef:
+              name: prediction-pipeline-secret
               key: MLFLOW_TRACKING_PASSWORD
+
         #
         - name: RISINGWAVE_HOST
           valueFrom:

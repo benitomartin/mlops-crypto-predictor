@@ -11,3 +11,4 @@ namespace: rwml
 resources:
   - ./prediction-generator-d.yaml
   - ./prediction-generator-cm.yaml
+  # - ./prediction-generator-secret.yaml

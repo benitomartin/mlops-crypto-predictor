@@ -15,6 +15,9 @@ spec:
       labels:
         app: technical-indicators
     spec:
+      imagePullSecrets:
+        - name: ghcr-creds
+
       containers:
       - name: technical-indicators
         image: ghcr.io/benitomartin/technical_indicators:latest

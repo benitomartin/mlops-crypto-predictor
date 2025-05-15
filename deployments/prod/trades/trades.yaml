@@ -16,6 +16,9 @@ spec:
       labels:
         app: trades
     spec:
+      imagePullSecrets:
+        - name: ghcr-creds
+
       containers:
       - name: trades
         # Specific version - will always pull this exact version
@@ -24,7 +27,7 @@ spec:
         #
         env:
         - name: KAFKA_BROKER_ADDRESS
-          value: kafka-c6c8-kafka-bootstrap.strimzi.svc.cluster.local:9092
+          value: kafka-e11b-kafka-bootstrap.kafka.svc.cluster.local:9092
         - name: KAFKA_TOPIC
           value: "trades"
         - name: DATA_SOURCE
