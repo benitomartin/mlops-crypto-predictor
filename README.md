@@ -2,26 +2,65 @@
 
 ![deployment trades](images/deployment_trades2.png)
 
-This is a project to predict crypto prices using Kafka, Kind, Kubernetes, uv, and Quix Streams.
+A comprehensive MLOps project for real-time cryptocurrency price prediction using Kafka, Kind, Kubernetes, uv, and Quix Streams. The project is structured with separate development and production environments, with the production cluster deployed on Civo Cloud.
 
-## Initialize the Project
+## Project Structure
 
-Initialize the project from the root directory. This will create the main `pyproject.toml` file.
+```text
+mlops-llm-crypto-predictor/
+├── dashboards/                     # Grafana dashboards
+├── deployments/                    # Kubernetes manifests
+│   ├── dev/                        # Development environment configurations
+│   │   ├── candles/                # Candles service K8s manifests
+│   │   ├── kind/                   # Kind cluster configuration
+│   │   │   ├── manifests/          # Kafka, MLflow, etc. manifests
+│   │   │   └── scripts/            # Cluster setup scripts
+│   │   ├── prediction-generator/   # Prediction service K8s manifests
+│   │   ├── technical-indicators/   # Technical indicators K8s manifests
+│   │   └── trades/                 # Trades service K8s manifests
+│   └── prod/                       # Production environment configurations
+│       ├── candles/                # Candles service K8s manifests
+│       ├── prediction-generator/   # Prediction service K8s manifests
+│       ├── technical-indicators/   # Technical indicators K8s manifests
+│       └── trades/                 # Trades service K8s manifests
+├── docker/                         # Docker-related files and documentation
+├── images/                         # Documentation images
+├── services/                       # Microservices
+│   ├── candles/                    # Candles aggregation service
+│   ├── predictor/                  # ML prediction service
+│   ├── technical_indicators/       # Technical analysis service
+│   └── trades/                     # Trades data ingestion service
+├── .dockerignore                   # Docker ignore file
+├── .gitignore                      # Git ignore file
+├── .pre-commit-config.yaml         # Pre-commit configuration
+├── LICENSE                         # Project license
+├── Makefile                        # Project automation commands
+├── pyproject.toml                  # Project dependencies and configuration
+└── README.md                       # Project documentation
+```
+
+## Getting Started
+
+### Initialize the Project
+
+Initialize the project from the root directory to create the main `pyproject.toml` file:
 
 ```bash
 uv init
 ```
 
-Create a `trades` workspace in the `services` directory. This will create a `pyproject.toml` file in the `trades` workspace, with the `src` layout, and include the `hatchling` build-system. Additionally, it will add the `trades` workspace to the main `pyproject.toml` file.
+Create a `trades` workspace in the `services` directory:
 
 ```bash
 cd services
 uv init --lib trades
 ```
 
-### Adding Workspaces
+This creates a `pyproject.toml` file in the `trades` workspace with the `src` layout, includes the `hatchling` build-system, and adds the `trades` workspace to the main `pyproject.toml` file.
 
-Each service is treated as a separate workspace. The `uv` tool uses the `[tool.uv.workspace]` section to define all workspace members.
+### Managing Workspaces
+
+Each service is treated as a separate workspace using the `[tool.uv.workspace]` section to define all workspace members.
 
 To declare a workspace member in the main `pyproject.toml`:
 
@@ -30,32 +69,31 @@ To declare a workspace member in the main `pyproject.toml`:
 members = ["services/trades"]
 ```
 
-To add a workspace as a dependency, use:
+To add a workspace as a dependency:
 
 ```bash
 uv add trades
 ```
 
-This command does two things:
+This command:
 
-1. Adds trades to the dependencies list.
+1. Adds trades to the dependencies list
+1. Adds an entry to the `[tool.uv.sources]` section in `pyproject.toml`, marking it as a workspace dependency:
 
-1. Adds an entry to the [tool.uv.sources] section in `pyproject.toml`, marking it as a workspace dependency:
-
-   ```toml
-   [tool.uv.sources]
-   trades = { workspace = true }
-   ```
+```toml
+[tool.uv.sources]
+trades = { workspace = true }
+```
 
 ### Adding Dependencies
 
-To add dependencies to the main project, use the following command:
+Add dependencies to the main project:
 
 ```bash
 uv add quixstreams
 ```
 
-To add local dependencies for development (`dependency-groups`) use the following command:
+Add development dependencies using dependency groups:
 
 ```bash
 uv add --group tests pytest
@@ -63,13 +101,10 @@ uv add --group tests pytest
 
 ### TA-Lib Installation
 
-TA-Lib is a library for technical analysis of financial data. It is used in the project to calculate technical indicators.
+TA-Lib is required for technical analysis of financial data. Install it before adding it to the project:
 
-You must install TA-Lib before adding it to the project. To install TA-Lib, follow the instructions on the following link:
-
-https://ta-lib.org/install/#executable-installer-recommended
-
-Then add the package to the project:
+1. Follow the installation instructions at [ta-lib.org](https://ta-lib.org/install/#executable-installer-recommended)
+1. Add the package to the project:
 
 ```bash
 uv add ta-lib
@@ -77,129 +112,111 @@ uv add ta-lib
 
 ### Synchronize the Project
 
-To synchronize the project without installing the dependency groups, use the following command:
+Synchronize the project without installing dependency groups:
 
 ```bash
 uv sync
 ```
 
-To synchronize the project and install the dependency groups, use the following command:
+Synchronize the project and install all dependency groups:
 
 ```bash
 uv sync --all-groups
 ```
 
-## Setting up Kafka
+## Infrastructure Setup
 
-To setup Kafka, we need first to create a Kind cluster with port mapping.
+### Setting up Kafka
 
-There are several scripts and folders in the `deployments/dev/kind` directory.
-
-- `kind-with-portmapping.yaml`: This is the Kind configuration file. It includes the port mapping for Kafka.
-- `manifests`: This folder contains the Kafka configuration files.
-  - `kafka-e11b.yaml`: This is the Kafka configuration file. It includes the port mapping for Kafka. With this file there will be created the **2 Kafka pods** (`dual-role` and `entity-operator`).
-  - `kafka-ui-all-in-one.yaml`: This is the Kafka UI configuration file. It includes the port mapping for Kafka UI. This will create the **Kafka UI pod**.
-- `install_kafka.sh`: This script installs Kafka using [Strimzi](https://strimzi.io/quickstarts/) that allows to use Kafka in Kubernetes. It uses the `kafka-e11b.yaml` configuration file. With this file there will be created **8 core Kubernetes pods** (kube-system) and the `local-path-storage` pod from Kind to handle persistent storage in the cluster in addition to the pods created in `kafka-e11b.yaml`
-- `install_kafka_ui.sh`: This script installs Kafka UI to make it easier to manage Kafka in a Web UI. It uses the `kafka-ui-all-in-one.yaml` configuration file.
-- `create_cluster.sh`: This script runs all the previous scripts in order to create the Kind cluster with Kafka and Kafka UI.
-
-Once you run the `create_cluster.sh` script (with docker running), you should see the following output in the `k9s` terminal:
+Create a Kind cluster with port mapping for Kafka:
 
 ```bash
-chmod +x create_cluster.sh
-./create_cluster.sh
+chmod +x deployments/dev/kind/create_cluster.sh
+./deployments/dev/kind/create_cluster.sh
 ```
+
+The `deployments/dev/kind` directory contains:
+
+- `kind-with-portmapping.yaml`: Kind configuration with port mapping for Kafka
+- `manifests/`: Kafka configuration files
+  - `kafka-e11b.yaml`: Creates 2 Kafka pods (`dual-role` and `entity-operator`)
+  - `kafka-ui-all-in-one.yaml`: Creates the Kafka UI pod
+- `install_kafka.sh`: Installs Kafka using [Strimzi](https://strimzi.io/quickstarts/)
+- `install_kafka_ui.sh`: Installs Kafka UI
+- `create_cluster.sh`: Runs all scripts to create the Kind cluster with Kafka and Kafka UI
+
+After running the script, you should see the cluster in the `k9s` terminal:
 
 ![create cluster](images/create_cluster_k9s.png)
 
-If we type `svc` in the `k9s` terminal, we should see the following output and the port mapping for Kafka and Kafka UI `8080`:
+Check services and port mapping for Kafka and Kafka UI:
 
 ![kafka ui k9s](images/kafka_ui_k9s.png)
 
-To visualize the Kafka UI, it is necessary to forward the port `8080` from the `kafka-ui` service (which communicates internally with the Kafka cluster on port `9092`) to port `8182` (or any other free port) on your local machine. This means that any traffic sent to `http://localhost:8182` on your local machine will be forwarded to the `kafka-ui` service running inside the Kubernetes cluster on port `8080`.
+### Accessing Kafka UI
+
+Forward the Kafka UI port to access it from your local machine:
 
 ```bash
 kubectl -n kafka port-forward svc/kafka-ui 8182:8080
 ```
 
-> 💡**Note**: You can also use `tmux` to run the port-forwarding command in the background and keep it running. For that, you can use the following command:
->
-> ```bash
-> tmux new-session -d 'kubectl -n kafka port-forward svc/kafka-ui 8182:8080'
-> ```
->
-> To stop the port-forwarding, you can use the following commands. First check the session number with:
->
-> ```bash
-> tmux ls
-> ```
->
-> Then kill the session with:
->
-> ```bash
-> tmux kill-session -t <session_number>
-> ```
+For background port forwarding using tmux:
 
-Now you can access the Kafka UI in your local machine at `http://localhost:8182` or `http://127.0.0.1:8182`.
+```bash
+tmux new-session -d 'kubectl -n kafka port-forward svc/kafka-ui 8182:8080'
+```
+
+Access the Kafka UI at [http://localhost:8182](http://localhost:8182).
 
 ![kafka ui web](images/kafka_ui_web.png)
 
-You can test the connection to the Kafka broker on TCP port `31234` with the following command:
+Test the Kafka broker connection:
 
 ```bash
 nc -vvv localhost 31234
 ```
 
-### Running a Service
+### Running Services
 
-Once you have the Kafka cluster running, you can run the services.
+#### Trades Service
 
-The first service is the `trades` service. This service will connect to the Kraken API and get the trades data in real time. It will then produce the trades data to the Kafka topic `trades`.
-
-The following command will run the `trades` service, and you should see the trades data in the Kafka UI together with the terminal output:
+The trades service connects to the Kraken API to get real-time trade data and produces it to the Kafka topic `trades`:
 
 ```bash
 uv run services/trades/src/trades/main.py
 ```
 
-![trades terminal](images/trades_terminal.png)
+You should see trade data in both the terminal and Kafka UI:
 
+![trades terminal](images/trades_terminal.png)
 ![trades kafka ui](images/trades_kafta_ui.png)
 
-### Managing Partitions
+#### Managing Partitions
 
-By default the number of partitions is 1. If you change the number of partitions from the trades service from 1 to 2, you will see that the trades data is distributed between the two partitions. Only when both partitions have values, you can deploy the candles service with 2 replicas, so that each replica will consume from one partition.
+By default, the number of partitions is 1. If you change it to 2, trade data will be distributed between both partitions. Only deploy the candles service with 2 replicas when both partitions have values.
 
-Changing the partitions after the candles service is deployed will not work, because the candles service will not be able to consume from the new partitions and this will rise an error. You will need to delete the candles service and deploy it again with the new number of partitions.
+Note: Changing partitions after deploying the candles service will cause errors. You'll need to delete and redeploy the candles service with the new partition count.
 
-## RisingWave
+### Setting up RisingWave
 
-RisingWave is a streaming database that allows you to perform real-time analytics on streaming data. It is used in the project to store the candles data.
-
-To setup RisingWave we need the `risingwave-values.yaml` file. This file contains the configuration for RisingWave.
-
-To install RisingWave, run the following command:
+RisingWave is a streaming database for real-time analytics. Install it using:
 
 ```bash
-chmod +x install_risingwave.sh
-./install_risingwave.sh
+chmod +x deployments/dev/kind/install_risingwave.sh
+./deployments/dev/kind/install_risingwave.sh
 ```
 
-To access the RisingWave UI, run the following command for port forwarding:
+Access the RisingWave database:
 
 ```bash
 kubectl port-forward svc/risingwave -n risingwave 4567:4567
-```
-
-Then you can access the RisingWave UI in your local machine at:
-
-```bash
 psql -h localhost -p 4567 -d dev -U root
 ```
 
-### Connecting RisingWave to Kafka
+#### Connecting RisingWave to Kafka
 
-To [connect RisingWave to Kafka](https://docs.risingwave.com/ingestion/sources/kafka), you need to create a table. A table is a collection of data that is stored in RisingWave. To create a table, you need to specify the name of the table and the columns that the table will contain. The following is the syntax for creating a table. This can be found in the `query.sql` file.
+Create a table in RisingWave to connect to Kafka. Example from `query.sql`:
 
 ```sql
 CREATE SOURCE my_kafka_source (
@@ -213,52 +230,30 @@ CREATE SOURCE my_kafka_source (
 ) FORMAT PLAIN ENCODE JSON;
 ```
 
-You can run the CREATE TABLE command of the `query.sql` file in the `psql` terminal to create the table.
-
-To check the table, you can run the following command:
+Query the technical indicators table:
 
 ```sql
 SELECT * FROM technical_indicators LIMIT 10;
-```
-
-To check the number of values in the table is being added, you can run the following command a few times:
-
-```sql
 SELECT COUNT(*) FROM technical_indicators;
-```
-
-To check the number of values in the table by pair, you can run the following command:
-
-```sql
 SELECT pair, COUNT(*) FROM technical_indicators GROUP BY pair;
 ```
 
 ![sql table](images/sql_ti_table.png)
 
-### Accessing the Minio UI
+#### Accessing Minio
 
-Minio is a tool for storing the runtime state of streaming jobs, such as:
-
-- Operational state
-- Snapshots and checkpoints
-- Internal metadata
-
-As per the `risingwave-values.yaml` file, there will be two buckets created: `risingwave` and `mlflow-d971`.
-
-To access the Minio UI, run the following command for port forwarding:
+Minio stores the runtime state of streaming jobs. Forward the Minio UI port:
 
 ```bash
 kubectl port-forward -n risingwave svc/risingwave-minio 9001:9001
 ```
 
-Then in the Minio UI, you can login with the following credentials as per the `risingwave-values.yaml` file:
+Login with credentials from `risingwave-values.yaml`:
 
-```bash
-rootUser: admin
-rootPassword: "minio-D0408AC0"
-```
+- Username: admin
+- Password: minio-D0408AC0
 
-Once the Minio UI is open, you can see the two buckets created: `risingwave` and `mlflow-d971`. You need to create access keys and add them in the manifest `mlflow-minio-secret.yaml`.
+Create access keys and add them to `mlflow-minio-secret.yaml`:
 
 ```yaml
 apiVersion: v1
@@ -268,64 +263,54 @@ metadata:
   namespace: mlflow
 type: Opaque
 stringData:
-  AccessKeyID: VALUE_HERE
-  SecretKey: VALUE_HERE
+  AccessKeyID: YOUR_ACCESS_KEY_ID
+  SecretKey: YOUR_SECRET_KEY
 ```
 
-Then you can apply the secret with this command and visualize it in `k9s` terminal under secrets:
+Apply the secret:
 
 ```bash
 kubectl create namespace mlflow
 kubectl apply -f deployments/dev/kind/manifests/mlflow-minio-secret.yaml
 ```
 
-### Uninstalling RisingWave
-
-To uninstall RisingWave, run the following command:
+#### Uninstalling RisingWave
 
 ```bash
 helm uninstall risingwave -n risingwave
 ```
 
-## Grafana
+### Setting up Grafana
 
-Grafana is a tool for visualizing data. It is used in the project to visualize the candles data.
-
-To setup Grafana we need the `grafana-values.yaml` file. This file contains the configuration for Grafana.
-
-To install Grafana, run the following command:
+Install Grafana for data visualization:
 
 ```bash
-chmod +x install_grafana.sh
-./install_grafana.sh
+chmod +x deployments/dev/kind/install_grafana.sh
+./deployments/dev/kind/install_grafana.sh
 ```
 
-To access the Grafana UI, run the following command for port forwarding:
+Access the Grafana UI:
 
 ```bash
 kubectl port-forward -n monitoring svc/grafana 3000:80
 ```
 
-Then in the Grafana UI, you can login with the following credentials as per the `grafana-values.yaml` file:
+Login with credentials from `grafana-values.yaml`:
 
-```bash
-adminUser: admin
-adminPassword: grafana
-```
+- Username: admin
+- Password: grafana
 
-Inside the Grafana UI, you can add a data source like PostgreSQL, which is the database that RisingWave uses.
+Add a PostgreSQL data source with these settings:
 
-Add the following credentials:
-
-Name: grafana-postgresql-datasource
-Host URL: risingwave.risingwave.svc.cluster.local:4567
-Database: dev
-User: root
-TLS/SSL Mode: disable
+- Name: grafana-postgresql-datasource
+- Host URL: risingwave.risingwave.svc.cluster.local:4567
+- Database: dev
+- User: root
+- TLS/SSL Mode: disable
 
 ![grafana data source](images/grafana_data_source.png)
 
-Then you can create a dashboard. You can search under dashboards for Candlestick. Then under code, you can copy the code query and paste it there.
+Create a dashboard with SQL queries like:
 
 ```sql
 SELECT open, high, low, close, pair, window_start_ms, window_end_ms, to_timestamp(window_end_ms/1000) as time FROM technical_indicators LIMIT 10;
@@ -337,31 +322,24 @@ SELECT open, high, low, close, pair, window_start_ms, window_end_ms, to_timestam
 
 ![grafana dashboard](images/grafana_dashboard.png)
 
-Then under dashboards -> settings you can take the JSON Model and save it in the `dashboards` folder. This can be imported in the future into Grafana again.
+Export the dashboard JSON model from Settings and save it in the `dashboards` folder for future imports.
 
-To uninstall Grafana, run the following command:
+Uninstall Grafana:
 
 ```bash
 helm uninstall grafana -n monitoring
 ```
 
-## MLflow
+### Setting up MLflow
 
-Once you have the Minio UI configured, you can install MLflow with the following commands. Make sure to have the `mlflow-values.yaml` file:
-
-First, you need to create the database and user in RisingWave PostgreSQL. Enter the shell in the PostgreSQL pod:
+Create the database and user in RisingWave PostgreSQL:
 
 ```bash
 kubectl exec -it -n risingwave risingwave-postgresql-0 -- bash
-```
-
-Then enter the PostgreSQL shell:
-
-```bash
 psql -U postgres -h risingwave-postgresql.risingwave.svc.cluster.local # password: postgres
 ```
 
-Then create the database and user:
+Create the database and user:
 
 ```sql
 CREATE USER mlflow WITH ENCRYPTED password 'mlflow';
@@ -369,21 +347,15 @@ CREATE DATABASE mlflow WITH ENCODING='UTF8' OWNER=mlflow;
 CREATE DATABASE mlflow_auth WITH ENCODING='UTF8' OWNER=mlflow;
 ```
 
-You can see the database and user created:
-
 ![mlflow db](images/mlflow_db.png)
 
-You can create the MLflow secret with the following command:
-
-```bash
-kubectl delete secret mlflow-tracking --namespace=mlflow
-```
+Create the MLflow tracking secret:
 
 ```bash
 kubectl apply -f deployments/dev/kind/manifests/mlflow-tracking-secret.yaml
 ```
 
-or
+Or create it manually:
 
 ```bash
 kubectl create secret generic mlflow-tracking \
@@ -392,140 +364,132 @@ kubectl create secret generic mlflow-tracking \
   --namespace=mlflow
 ```
 
-Then you can install MLflow:
+Install MLflow:
 
 ```bash
 helm upgrade --install --create-namespace --wait mlflow oci://registry-1.docker.io/bitnamicharts/mlflow --namespace=mlflow --values deployments/dev/kind/manifests/mlflow-values.yaml
 ```
 
-![alt text](images/mlflow_deploy.png)
+![mlflow deploy](images/mlflow_deploy.png)
 
-The temporary user and password are in the `mlflow-values.yaml` file. But you can get the password with the following command:
-
-```bash
-kubectl get secret --namespace mlflow mlflow-tracking -o jsonpath="{.data.admin-user }"  | base64 -d
-```
+Get the MLflow credentials:
 
 ```bash
+kubectl get secret --namespace mlflow mlflow-tracking -o jsonpath="{.data.admin-user}" | base64 -d
 kubectl get secrets -n mlflow mlflow-tracking -o json | jq -r '.data."admin-password"' | base64 -d
 ```
 
-To uninstall MLflow, run the following command:
+Uninstall MLflow:
 
 ```bash
 helm uninstall mlflow -n mlflow
 ```
 
-> NOTE: To run the `train.py` in the predictor service, you need to port-forward the MLflow UI and RisingWave UI.
+Note: To run the `train.py` script in the predictor service, you need to port-forward both the MLflow UI and RisingWave UI.
 
 ## Training Pipeline
 
-The training pipeline is a Kubernetes CronJob that runs the `train.py` script in the predictor service. The script is executed in a container based on the `training-pipeline:dev` image.
-
-To deploy the training pipeline, run the following command:
+The training pipeline is a Kubernetes CronJob that runs the `train.py` script in the predictor service:
 
 ```bash
 make cron-kustomize-training
 ```
 
-To check the training pipeline, run the following command:
+Check the training pipeline:
 
 ```bash
 kubectl get cronjobs -n rwml
-```
-
-To check the next scheduled time for the training pipeline, run the following command:
-
-```bash
 kubectl describe cronjobs -n rwml
 ```
 
-## Makefile
+## Prediction Generator
 
-The project includes a Makefile with several useful commands for development and deployment:
+Deploy the prediction generator service:
 
-1. Kind Cluster Management
+```bash
+make cron-kustomize-prediction
+```
 
-   ```bash
-   make start-kind-cluster  # Start the Kind cluster with port mapping (or build it if it doesn't exist)
-   make stop-kind-cluster   # Stop the Kind cluster
-   ```
+This service reads from the technical indicators table and generates predictions using the trained model.
 
-1. Development Commands
+## Makefile Commands
 
-   ```bash
-   make dev service=trades             # Run a specific service in development mode
-   make build-for-dev service=trades   # Build a service's Docker image for development
-   make push-for-dev service=trades    # Push a service's Docker image to the Kind cluster
-   make deploy-for-dev service=trades  # Deploy a service to the Kind cluster
-   ```
+The project includes a comprehensive Makefile with useful commands:
 
-   To verify the deployment, use the following command or use `k9s` terminal:
+### Kind Cluster Management
 
-   ```bash
-   kubectl get deployments --all-namespaces
-   ```
+```bash
+make start-kind-cluster  # Start the Kind cluster with port mapping
+make stop-kind-cluster   # Stop the Kind cluster
+```
 
-   ![deployment trades](images/deployment_trades1.png)
+### Development Commands
 
-   ![deployment trades](images/deployment_trades2.png)
+```bash
+make dev service=trades             # Run a specific service in development mode
+make build-for-dev service=trades   # Build a service's Docker image for development
+make push-for-dev service=trades    # Push a service's Docker image to the Kind cluster
+make deploy-for-dev service=trades  # Deploy a service to the Kind cluster
+```
 
-1. Linting and Formatting
+Verify deployments:
 
-   ```bash
-   make ruff    # Run Ruff linter with auto-fix
-   make mypy    # Run MyPy static type checker
-   make clean   # Clean up cached files and build artifacts
-   make all     # Run ruff, mypy, and clean in sequence
-   ```
+```bash
+kubectl get deployments --all-namespaces
+```
 
-1. Help Command
+![deployment trades](images/deployment_trades1.png)
+![deployment trades](images/deployment_trades2.png)
 
-   ```bash
-   make help    # Display all available make commands with descriptions
-   ```
+### Port Forwarding
+
+```bash
+make tmux-port-forward-mlflow  # Port forward MLflow UI with tmux
+```
+
+### Linting and Formatting
+
+```bash
+make ruff    # Run Ruff linter with auto-fix
+make mypy    # Run MyPy static type checker
+make clean   # Clean up cached files and build artifacts
+make all     # Run ruff, mypy, and clean in sequence
+```
+
+### Help Command
+
+```bash
+make help    # Display all available make commands with descriptions
+```
 
 ## Pre-commit Hooks
 
-The project uses pre-commit hooks to ensure code quality and consistency. To install the pre-commit hooks, run the following command:
+The project uses pre-commit hooks for code quality and consistency:
 
 ```bash
-pre-commit install
+pre-commit install           # Install pre-commit hooks
+pre-commit autoupdate        # Update hooks to latest versions
+pre-commit run --all-files   # Run hooks manually
 ```
 
-To update the pre-commit hooks to the latest versions, run the following command:
-
-```bash
-pre-commit autoupdate
-```
-
-To run the pre-commit hooks manually, run the following command:
-
-```bash
-pre-commit run --all-files
-```
-
-## Checking CPU and Memory
+## Resource Requirements
 
 ### Limits and Requests
+
+Check resource usage:
 
 ```bash
 kubectl get pods --all-namespaces -o custom-columns="NAMESPACE:.metadata.namespace,NAME:.metadata.name,CPU_REQUEST:.spec.containers[*].resources.requests.cpu,MEMORY_REQUEST:.spec.containers[*].resources.requests.memory,CPU_LIMIT:.spec.containers[*].resources.limits.cpu,MEMORY_LIMIT:.spec.containers[*].resources.limits.memory"
 ```
 
-CPU (Requests/Limits):
+Resource requirements:
 
-- Total requested: ~2.2 vCPU
-- Total limit: ~6–7 vCPU
-
-Memory (Requests/Limits):
-
-- Total requested: ~4.5–5Gi
-- Total limit: ~10–11Gi
+- CPU (Requests/Limits): ~2.2 vCPU / ~6-7 vCPU
+- Memory (Requests/Limits): ~4.5-5Gi / ~10-11Gi
 
 ![cpu memory](images/cpu_memory.png)
 
-## Current Usage
+### Current Usage
 
 Install Metrics Server:
 
@@ -533,31 +497,7 @@ Install Metrics Server:
 kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.7.2/components.yaml
 ```
 
-Modify the Metrics Server deployment:
-
-```bash
-kubectl get deployment metrics-server -n kube-system -o yaml > metrics-server-deployment.yaml
-```
-
-Open in code editor and add the following line `--kubelet-insecure-tls` under `args`:
-
-```yaml
-    spec:
-      containers:
-      - args:
-        - --cert-dir=/tmp
-        - --secure-port=10250
-        - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
-        - --kubelet-use-node-status-port
-        - --metric-resolution=15s
-        - --kubelet-insecure-tls
-```
-
-Apply the modified deployment:
-
-```bash
-kubectl apply -f metrics-server-deployment.yaml
-```
+Modify the Metrics Server deployment to add `--kubelet-insecure-tls` to the args.
 
 Check CPU and memory usage:
 
@@ -568,19 +508,16 @@ kubectl top pods --all-namespaces
 
 ![usage](images/usage.png)
 
+## Production Deployment
+
 ### Recommended Civo Cluster Size
 
-Choose at least 1 node with this configuration:
+Choose at least:
 
-- 3-4 vCPU
-- 7–8 GiB RAM
+- 1 node with 3-4 vCPU and 7-8 GiB RAM, or
+- 2 nodes with 2 vCPU and 4 GiB RAM each for redundancy
 
-Or take two nodes for redundancy.
-
-- CPU per node: 2 vCPU
-- Memory per node: 4 GiB RAM
-
-Get Civo instance sizes (get your API key from Civo [here](https://www.civo.com/api/instances))
+Get Civo instance sizes:
 
 ```bash
 curl -s -H "Authorization: bearer <your-api-key>" https://api.civo.com/v2/sizes | jq -r '[.[] | select(.selectable == true)] | ["Name","Type","CPU","RAM (MiB)","Disk (GB)"], (.[] | [.name, .type, (.cpu_cores|tostring), (.ram_mb|tostring), (.disk_gb|tostring)]) | @tsv' | column -t
@@ -588,16 +525,14 @@ curl -s -H "Authorization: bearer <your-api-key>" https://api.civo.com/v2/sizes 
 
 ![civo instance sizes](images/civo_instance_sizes.png)
 
-Example Civo plan:
+Recommended Civo plans:
 
-- One node: `g4s.kube.large` (4 vCPU / 8GiB RAM).
-  - Cost: 0.06 USD/h, 21.75 USD/month
-- Two nodes: `g4s.kube.medium` (2 vCPU / 4GiB RAM)
-  - Cost: 0.03 USD/h, 43.50 USD/month
+- One node: `g4s.kube.large` (4 vCPU / 8GiB RAM) - $21.75/month
+- Two nodes: `g4s.kube.medium` (2 vCPU / 4GiB RAM) - $43.50/month
 
-# Civo Configuration
+### Civo Configuration
 
-Change the context to the Civo cluster configuration file:
+Switch to the Civo cluster:
 
 ```bash
 export KUBECONFIG=~/.kube/config:~/.kube/civo-crypto-cluster-kubeconfig
@@ -605,13 +540,13 @@ kubectl config get-contexts
 kubectl config use-context <your-civo-context-name>
 ```
 
-Create a namespace for the project:
+Create a namespace:
 
 ```bash
 kubectl create namespace ben
 ```
 
-Authenticate to the GitHub Container Registry (ghcr.io) by creating a secret in the `ben` namespace:
+Authenticate to GitHub Container Registry:
 
 ```bash
 kubectl create secret docker-registry ghcr-creds \
@@ -621,16 +556,16 @@ kubectl create secret docker-registry ghcr-creds \
   --namespace=ben
 ```
 
-Apply the Kafka configuration:
+Apply Kafka configuration:
 
 ```bash
-kubeclt apply -f deployments/prod/kind/install_kafka_prod.sh
-kubeclt apply -f deployments/prod/kind/install_kafka_ui_prod.sh
+kubectl apply -f deployments/prod/kind/install_kafka_prod.sh
+kubectl apply -f deployments/prod/kind/install_kafka_ui_prod.sh
 ```
 
-To see the Kafka UI, make sure to add the NodePort to the Civo Firewall Inbound Rules and restrict it to your CIDR.
+Add the NodePort to Civo Firewall Inbound Rules and restrict it to your CIDR.
 
-Deploy the services:
+Deploy services:
 
 ```bash
 kubectl apply -f deployments/prod/trades/trades.yaml
@@ -638,4 +573,40 @@ kubectl apply -f deployments/prod/candles/candles.yaml
 kubectl apply -f deployments/prod/technical-indicators/technical-indicators.yaml
 ```
 
-The Kafka UI will be available at `http://<your-civo-cluster-ip>:<NodePort>`.
+Access the Kafka UI at `http://<your-civo-cluster-ip>:<NodePort>`.
+
+## Troubleshooting
+
+### Pod Creation Errors
+
+If pods fail with `CreateContainerConfigError`, check:
+
+1. Image availability: `docker exec rwml-34fa-control-plane crictl images | grep <service-name>`
+1. ConfigMap and Secret references
+1. Environment variables
+
+### Database Connection Issues
+
+If services can't connect to RisingWave:
+
+1. Check if RisingWave is running: `kubectl get pods -n risingwave`
+1. Verify connection details in ConfigMaps
+1. Port-forward for local testing: `kubectl port-forward svc/risingwave -n risingwave 4567:4567`
+
+### Restarting Services
+
+To restart a service after Docker restarts:
+
+```bash
+kubectl rollout restart deployment <service-name> -n <namespace>
+```
+
+Or delete the pod to trigger automatic recreation:
+
+```bash
+kubectl delete pod <pod-name> -n <namespace>
+```
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

@@ -180,3 +180,5 @@ docker_build.sh
 services/predictor/.env.local
 mem_cpu.sh
 metrics-server-deployment.yaml
+*_report.html
+README_old.md
