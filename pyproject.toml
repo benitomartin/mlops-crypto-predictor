@@ -1,7 +1,7 @@
 [project]
-name = "mlops-llm-crypto-predictor"
+name = "mlops-crypto-predictor"
 version = "0.1.0"
-description = "MLOps LLM Crypto Predictor"
+description = "MLOps Crypto Predictor"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

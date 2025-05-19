@@ -112,11 +112,11 @@ build-and-push-for-prod: ## Build and push the service for production
 		-t ghcr.io/benitomartin/${service}:sha-$$GIT_REVISION \
 		--label org.opencontainers.image.revision=$$GIT_REVISION \
 		--label org.opencontainers.image.created=$$CREATED \
-		--label org.opencontainers.image.url="https://github.com/benitomartin/mlops-llm-crypto-predictor/docker/Dockerfile" \
+		--label org.opencontainers.image.url="https://github.com/benitomartin/mlops-crypto-predictor/docker/Dockerfile" \
 		--label org.opencontainers.image.title="${service}" \
 		--label org.opencontainers.image.description="${service} Dockerfile" \
 		--label org.opencontainers.image.licenses="MIT" \
-		--label org.opencontainers.image.source="https://github.com/benitomartin/mlops-llm-crypto-predictor" \
+		--label org.opencontainers.image.source="https://github.com/benitomartin/mlops-crypto-predictor" \
 		-f docker/Dockerfile .
 
 
@@ -189,11 +189,11 @@ build-and-push-for-prod-ti: ## Build and push the service for production
 		-t ghcr.io/benitomartin/${service}:sha-$$GIT_REVISION \
 		--label org.opencontainers.image.revision=$$GIT_REVISION \
 		--label org.opencontainers.image.created=$$CREATED \
-		--label org.opencontainers.image.url="https://github.com/benitomartin/mlops-llm-crypto-predictor/docker/ti.Dockerfile" \
+		--label org.opencontainers.image.url="https://github.com/benitomartin/mlops-crypto-predictor/docker/ti.Dockerfile" \
 		--label org.opencontainers.image.title="${service}" \
 		--label org.opencontainers.image.description="${service} Dockerfile" \
 		--label org.opencontainers.image.licenses="MIT" \
-		--label org.opencontainers.image.source="https://github.com/benitomartin/mlops-llm-crypto-predictor" \
+		--label org.opencontainers.image.source="https://github.com/benitomartin/mlops-crypto-predictor" \
 		-f docker/ti.Dockerfile .
 
 # deploy-for-prod: ## Deploy the service to production

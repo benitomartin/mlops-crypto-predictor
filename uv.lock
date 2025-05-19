@@ -9,7 +9,7 @@ resolution-markers = [
 [manifest]
 members = [
     "candles",
-    "mlops-llm-crypto-predictor",
+    "mlops-crypto-predictor",
     "predictor",
     "technical-indicators",
     "trades",
@@ -1697,7 +1697,7 @@ wheels = [
 ]
 
 [[package]]
-name = "mlops-llm-crypto-predictor"
+name = "mlops-crypto-predictor"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

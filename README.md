@@ -1,4 +1,4 @@
-# MLOps LLM Crypto Predictor
+# MLOps Crypto Predictor
 
 ![deployment trades](images/deployment_trades2.png)
 
