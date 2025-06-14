@@ -2,6 +2,33 @@
 
 ![deployment trades](images/deployment_trades2.png)
 
+<div align="center">
+    <a href="https://www.python.org/downloads/release/python-3120/"><img src="https://img.shields.io/badge/python-3.12+-blue.svg"/></a>
+    <a href="https://github.com/astral-sh/uv"><img src="https://img.shields.io/badge/uv-Package%20Manager-blue"/></a>
+    <a href="https://kafka.apache.org/"><img src="https://img.shields.io/badge/Apache%20Kafka-Streaming-orange"/></a>
+    <a href="https://kubernetes.io/"><img src="https://img.shields.io/badge/Kubernetes-Orchestration-326ce5"/></a>
+    <a href="https://kind.sigs.k8s.io/"><img src="https://img.shields.io/badge/Kind-Local%20Kubernetes-326ce5"/></a>
+</div>
+<div align="center">
+    <a href="https://quix.io/"><img src="https://img.shields.io/badge/Quix%20Streams-Stream%20Processing-purple"/></a>
+    <a href="https://mlflow.org/"><img src="https://img.shields.io/badge/MLflow-ML%20Lifecycle-0194E2"/></a>
+    <a href="https://www.risingwave.com/"><img src="https://img.shields.io/badge/RisingWave-Stream%20Database-green"/></a>
+    <a href="https://grafana.com/"><img src="https://img.shields.io/badge/Grafana-Monitoring-F46800"/></a>
+    <a href="https://www.civo.com/"><img src="https://img.shields.io/badge/Civo%20Cloud-Production-239DFF"/></a>
+</div>
+<div align="center">
+    <a href="http://mypy-lang.org/"><img src="https://img.shields.io/badge/mypy-passed-blue"/></a>
+    <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/badge/ruff-passed-red"/></a>
+    <a href="https://docs.pytest.org/"><img src="https://img.shields.io/badge/pytest-passed-brightgreen"/></a>
+    <a href="https://github.com/pre-commit/pre-commit"><img src="https://img.shields.io/badge/pre--commit-passed-brightgreen"/></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg"/></a>
+</div>
+<p align="center">
+    <em>Real-time streaming ML pipeline with monitoring</em>
+</p>
+
+---
+
 A comprehensive MLOps project for real-time cryptocurrency price prediction using Kafka, Kind, Kubernetes, uv, and Quix Streams. The project is structured with separate development and production environments, with the production cluster deployed on Civo Cloud.
 
 ## Project Structure
